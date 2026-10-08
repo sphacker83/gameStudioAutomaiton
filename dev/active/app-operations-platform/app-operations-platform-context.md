@@ -2,6 +2,8 @@
 
 Last Updated: 2026-09-24
 
+2026-09-24 후속(잔여 코드 공백): 사용자 요청("나머지 다 구현해")으로 실계정 없이 구현 가능한 공백을 채웠다. 스토어 상품 활성화·구독·심사 제출·앱 프리뷰·정산, X 미디어, Steam 정정, Google Ads 이미지·귀속 fact, AppLovin 소재·cohort 수익, 미출시 광고 차단·성과 규칙, 장비 이전 차단, macOS Seatbelt 빌드 격리, 미디어 등록 확장, Electron API 허용 목록 회귀 검사가 들어갔다. 성장 운영은 [ai-growth-operations](../ai-growth-operations/ai-growth-operations-context.md)에 기록했다. 모든 쓰기는 공식 문서와 모의 HTTP로만 검증했다. 체크리스트는 실계정·타 OS·장기 수용 조건 때문에 유지한다(38/84). 독립 리뷰를 두 건(성장 운영, macOS 격리) 받았고 지적 사항을 수정했다. [검증](../../../docs/verification.md#2026-09-24-ai-성장-운영-구현). 남은 필수 입력: 시험 계정·외부 반영 승인 범위, Windows 장비, Apple 서명 인증서, 업데이트 게시 인증서.
+
 2026-09-24 후속: Google 공통 OAuth 등록과 실제 Electron 계정 검사·조회 완료. 앱에서 Ads 고객 ID 정정·검사, Seed2 재검수, Seed2/SEED3 출시 조회 성공. Ads 관리자 동기화 결함 수정 후 하위 계정 1개·캠페인 12개·광고비 행 0개를 앱 이력과 목록에서 확인했다. 집중 회귀 75/75·타입·빌드 통과. 새 OAuth 동의 전체 재실행과 외부 쓰기는 수행하지 않았다. [근거](../../../docs/verification.md#2026-09-23-google-공통-앱-등록실계정-접근-검사).
 
 2026-09-23 후속 완료: 운영준비 탭/도구 상태·파일 선택, 공급자 아이콘 버튼, OAuth 앱 재사용/JSON 입력과 Play·AdMob 계정 자동 확인, 하위 프로젝트 탐색 및 Godot 정상 템플릿 경고 제거, Godot 4.7.2 카탈로그, 실제 Android ZIP 해제 결함 수정. 전체 493 통과/15 환경 skip/실패 0, 타입·빌드·Electron 화면·공식 도구 다운로드 검증. Android SDK 구성 요소 전체 설치·다른 OS 검증은 완료로 간주하지 않는다. Google 공통 등록과 실제 조회 후속 결과는 위 최신 기록을 따른다. [근거](../../../docs/verification.md#2026-09-23-운영준비프로젝트-탐색oauth-ux). 장기 수용 체크리스트와 유효 plan은 유지한다.

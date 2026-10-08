@@ -1,6 +1,6 @@
 # 빌드 지원표
 
-Last Updated: 2026-09-22
+Last Updated: 2026-09-24
 
 이 표는 엔진 검수·빌드 plan·러너 구현을 기준으로 한다. **실측**은 이 저장소에서 실제 파일·프로세스로 확인한 동작이다. **미검증**은 공식 CLI 문서에 맞춰 명령을 구성했으나 해당 엔진/SDK/호스트가 이 환경에 없어 실제 결과물·서명을 확인하지 못한 항목이다. 미검증을 지원 완료로 읽지 않는다.
 
@@ -50,6 +50,8 @@ Last Updated: 2026-09-22
 | Linux 네이티브 bwrap Godot 4.3 export | 통과 | 기존 Linux 실행 경로 유지. 아래 2026-09-11 실측 |
 | Mac arm64 → Docker Linux arm64 Godot 4.3 export | 통과 | 인증 HTTP 전송·bwrap export·Mac 결과물 회수. 아래 2026-09-22 실측 |
 | Mac으로 회수한 Linux 게임의 실행 | 통과 | 같은 결과물의 복사본을 Linux bwrap에서 실행, exit 0·`AppOps controller build OK` |
+| macOS 네이티브 Seatbelt 격리 | 통과 | 홈·앱 데이터·`~/.ssh`·키체인 읽기 차단, 네트워크 차단, 쓰기 범위 제한, 환경 정리, 프로세스 트리 취소. 아래 2026-09-24 실측 |
+| macOS Seatbelt 안 실제 Godot 4.7.2 | 통과 | `--headless --version`·`--import`·씬 실행·macOS 프리셋 `--export-pack`. 아래 2026-09-24 실측 |
 
 ## 미검증 (실제 엔진·장비 필요)
 
@@ -62,7 +64,8 @@ Last Updated: 2026-09-22
 | 네이티브 Android AAB/APK | `gradlew app:bundleRelease` 또는 debug `assembleDebug` | JDK·Android SDK·실제 앱 모듈 빌드 없음 |
 | iOS archive/IPA | `xcodebuild archive` 후 `-exportArchive` | Mac 네이티브 Xcode·서명·ExportOptions.plist 빌드 미검증. Linux Docker 경로의 지원 대상에 포함되지 않음 |
 | 서명된 스토어 결과물 | Play AAB, App Store IPA, Steam 데스크톱 바이너리 | 서명 비밀·스토어 업로드는 이 범위 밖 |
-| Windows/macOS 네이티브 러너 | Unity Hub·Xcode 기본 설치 경로 탐색 및 격리 확장점 | 네이티브 격리·엔진 빌드 미검증. Mac의 Docker Linux 경로는 위 별도 실측 |
+| Windows 네이티브 러너 | Unity Hub 기본 설치 경로 탐색 | 네이티브 격리 백엔드가 없어 준비 완료로 표시하지 않음 |
+| macOS 네이티브 전체 내보내기·Xcode | Godot `--export-release`(.zip/.app), `xcodebuild archive` | Seatbelt 격리와 Godot PCK 내보내기만 실측. 전체 앱 번들·코드 서명·공증·Xcode/Unity/Unreal/Gradle의 Seatbelt 호환성은 미검증 |
 
 ## 샌드박스 도구 준비 (1회 APPOPS_* 설정)
 
@@ -88,8 +91,9 @@ Docker Linux 러너는 Godot 편집기를 이미지 빌드 때 준비하고, 템
 - 실행은 `shell: false`와 인수 배열만 사용한다.
 - Linux에서는 bubblewrap(`/usr/bin/bwrap`)으로 실행한다. 스냅샷·출력·검증된 도구 경로만 bind하고, `--clearenv` 후 최소 환경, `--unshare-net`으로 네트워크 차단, `--unshare-pid`+`--proc`으로 pid 격리, 사용자 홈(특히 `~/.gradle`·`~/.ssh` 같은 dotfile 트리)·controller 데이터·DBus는 mount하지 않는다. `APPOPS_*` 변수는 샌드박스에 넣지 않는다.
 - 격리 백엔드를 초기화할 수 없으면 일반 실행으로 폴백하지 않고 실패한다 (fail closed).
-- Windows/macOS 네이티브 실행은 검증된 내장 격리 러너가 없어 준비 완료로 표시하지 않는다. macOS에서 추가 Docker 환경을 사용한 Linux 러너의 Godot Linux 빌드는 아래와 같이 검증했다.
-- 취소 시 프로세스 그룹에 SIGTERM 후 유예 시간 뒤 SIGKILL.
+- macOS에서는 `/usr/bin/sandbox-exec`로 실행 시점에 생성한 Seatbelt 프로필을 적용한다(backend `seatbelt`). 규칙과 실측은 아래 [macOS Seatbelt 격리](#macos-seatbelt-격리-2026-09-24-macos) 절을 따른다. `probeIsolation()`은 실제 샌드박스에서 `/usr/bin/true` 실행과 홈 비밀 파일 읽기 차단을 확인한 뒤에만 사용 가능으로 보고한다.
+- Windows 네이티브 실행은 검증된 내장 격리 러너가 없어 준비 완료로 표시하지 않는다. macOS에서 추가 Docker 환경을 사용한 Linux 러너의 Godot Linux 빌드는 아래와 같이 검증했다.
+- 취소 시 프로세스 그룹에 SIGTERM 후 유예 시간 뒤 SIGKILL. macOS는 pid 네임스페이스가 없으므로 취소 시점의 자손 프로세스(부모 pid 기준)도 함께 신호를 보내 `setsid`로 그룹을 벗어난 자식까지 종료한다.
 - 표준 출력/에러는 스트림당 1,048,576바이트에서 자른다.
 - **결과물 출처 보증**: 매 빌드 시도 시작에 출력 디렉터리와 기대 결과물 경로(스냅샷 안 포함)를 제거해 이전 시도의 산출물이 재인증되지 않게 한다. 제거는 스냅샷/출력 루트 안의 검증된 경로만 대상으로 하며 호스트 경로는 건드리지 않는다.
 - 기대 결과물 경로는 실행 전에 검증한다: 스냅샷/출력 루트 밖, 스냅샷 루트 전체, 대상과 맞지 않는 확장자(android→`.apk`/`.aab`, ios→`.ipa`/`.zip`/`.xcarchive`)는 거부한다.
@@ -104,7 +108,61 @@ Docker Linux 러너는 Godot 편집기를 이미지 빌드 때 준비하고, 템
 | 네임스페이스 초기화 `--unshare-user-try --unshare-pid --unshare-net` + `/bin/true` | 성공 |
 | 스냅샷 bind + 호스트 홈/`/etc/passwd` 숨김 | 성공. 샌드박스에서 홈 파일 읽기 차단 |
 | 격리 불가 시 폴백 금지 | 성공. `forceUnavailable` 이면 명령 미실행·exit 1 |
-| Windows/macOS 네이티브 격리 러너 | 당시 미검증·미지원. 아래 Mac Docker 검증도 Linux bwrap를 사용함 |
+| Windows/macOS 네이티브 격리 러너 | 당시 미검증·미지원. 아래 Mac Docker 검증도 Linux bwrap를 사용함. macOS는 2026-09-24 Seatbelt로 추가 |
+
+## macOS Seatbelt 격리 (2026-09-24, macOS)
+
+구현: `apps/runner/seatbelt.ts`(프로필 생성·probe), `apps/runner/sandbox.ts`의 `wrapSeatbeltCommand`, `apps/runner/execute.ts`의 macOS 자손 프로세스 취소. Linux bwrap 경로는 바꾸지 않았다.
+
+**설계: SRT 대신 생성 프로필.** AI CLI 격리에 쓰는 `@anthropic-ai/sandbox-runtime` 0.0.77은 빌드 요구를 표현하지 못한다. 공개 `SandboxManager`는 네트워크 설정이 있으면(빈 허용 목록 포함) 항상 localhost HTTP/SOCKS 프록시를 띄우고 그 포트로의 loopback을 허용하며, 프로필에 키체인 데몬(`com.apple.securityd.xpc`, `com.apple.SecurityServer`) mach-lookup을 항상 허용하고, `TMPDIR=/tmp/claude`와 `bash -c` 문자열 실행을 강제한다. 프로필 생성기 자체는 공개 export가 아니다. 그래서 러너는 명령마다 SBPL 프로필을 생성해 `/usr/bin/sandbox-exec -p <profile> <실행 파일> <인수…>`를 셸 없이 argv로 실행한다. 프로세스·mach·IOKit·장치 기본 허용은 SRT macOS 프로필을 따르되 키체인 데몬은 뺐다. 경로에 `"`·`\`·개행이 있으면 이스케이프하지 않고 실패한다.
+
+| 구분 | 규칙 |
+|---|---|
+| 기본 | `(deny default)`. 네트워크 규칙이 없으므로 TCP/UDP 연결·bind와 unix socket 연결(ssh-agent, Docker 등)이 모두 차단된다 |
+| 읽기 차단 | `/Users`(사용자 홈 포함), `/Volumes`, `/private/tmp`, `/private/var/folders`, `os.tmpdir()`, `/Library/Keychains`, `APPOPS_DATA_DIR` |
+| 읽기 재허용 | 스냅샷, 출력, bwrap과 같은 규칙으로 검증한 도구 루트(`JAVA_HOME`, `GODOT_TEMPLATES_SOURCE` 등), 실행 파일 디렉터리와 `.app` 번들, per-run HOME/TMPDIR. 차단 루트와 같거나 그 조상인 경로는 재허용하지 않는다. 재허용 경로의 조상 디렉터리는 `stat`(메타데이터)만 허용 |
+| 재차단 | 재허용 뒤 홈의 모든 dotfile 트리(`~/.ssh`, `~/.aws`, `~/.gradle` 등, 정규식 `^<home>/\.`), `~/Library/Keychains`, `~/Library/Cookies`, `~/Library/Containers`, `~/Library/Group Containers`, `/Library/Keychains` |
+| 예외 | 실행 파일 자체(literal)는 dotfile 트리 아래라도 읽을 수 있다(`/opt/homebrew/bin/godot` → `~/.local/bin` 래퍼 같은 경우) |
+| 쓰기 허용 | 스냅샷, 출력, per-run `<output>/.appops-task-cache/sandbox/{home,tmp}`, `/dev/null` 등 표준 장치와 `/dev/fd` |
+| mach | 키체인 데몬을 제외한 SRT 목록만 허용. 다른 앱 실행(`lsopen`, Apple Events)과 샌드박스 밖 프로세스 조회·신호 불가 |
+| 환경 | bwrap과 같은 `FORBIDDEN_ENV`/`SECRET_ENV` 규칙을 공유하는 `allowedEnvEntries` 사용. 러너 프로세스 환경은 상속하지 않고 `PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/opt/homebrew/bin`, `LANG`, 허용된 plan env만 전달. `HOME`/`TMPDIR`는 plan env보다 우선해 per-run 디렉터리를 가리킨다 |
+| 취소 | 기존 프로세스 그룹 SIGTERM→SIGKILL에 더해, 취소 시점의 자손 pid를 `ps`로 모아 같은 신호를 보낸다 |
+
+**probe.** `probeIsolation()`은 darwin에서 `/usr/bin/sandbox-exec` 존재를 확인하고 실제 생성 프로필로 `/usr/bin/true`(exit 0이어야 함)와 홈 아래 임시 비밀 파일(`~/.appops-isolation-probe-*`)의 `/bin/cat`(실패하고 내용이 없어야 함)을 실행한 뒤에만 `available: true`를 보고한다. 임시 파일은 즉시 지운다.
+
+### 실측 기록 (2026-09-24, macOS 26.3 arm64, Node 24.18.0)
+
+`probeIsolation()` 출력:
+
+```
+{ available: true, backend: 'seatbelt', executable: '/usr/bin/sandbox-exec', version: 'sandbox-exec (Seatbelt), macOS 26.3' }
+```
+
+`node --import tsx --test tests/mac-isolation.test.ts tests/runner.test.ts tests/engines.test.ts` → `ℹ tests 39 / ℹ pass 39 / ℹ fail 0 / ℹ skipped 0`. `tests/runner.test.ts`의 프로세스 테스트(취소·출력 제한·호스트 파일 은닉 등)는 이제 macOS에서 주입 launcher가 아니라 실제 Seatbelt 경로로 실행된다. `npx tsc --noEmit -p tsconfig.json | grep -E 'apps/runner|tests/mac-isolation'` 출력 없음.
+
+`tests/mac-isolation.test.ts`가 샌드박스 안에서 관측한 값:
+
+| 검사 | 관측 |
+|---|---|
+| 읽기 | `{"home":"DENIED:EPERM","homeListing":"DENIED:EPERM","ssh":"DENIED:EPERM","keychains":"DENIED:EPERM","data":"DENIED:EPERM","sibling":"DENIED:EPERM","snapshot":"READ:14"}` |
+| 홈 아래 앱 데이터 배치 | `APPOPS_DATA_DIR=~/appops-mac-iso-appdata-*`, 스냅샷·출력이 그 하위일 때 `{"cwd":"<data>/snapshots/run-1","data":"DENIED:EPERM","siblings":"DENIED:EPERM"}`, 결과물 기록·인정 |
+| 네트워크 | `{"remote":"DENIED:EPERM","loopback":"DENIED:EPERM","bind":"DENIED:EPERM"}` (1.1.1.1:443, 테스트 프로세스의 127.0.0.1 리스너, 127.0.0.1 bind). 리스너 accept 0회 |
+| 쓰기 | `{"output":"WROTE","snapshot":"WROTE","sibling":"DENIED:EPERM","home":"DENIED:EPERM","privateTmp":"DENIED:EPERM","runHome":"WROTE","runTmp":"WROTE"}`. 차단된 경로는 호스트에 생성되지 않음 |
+| 환경 | 호스트에 주입한 `GITHUB_TOKEN`, `AWS_ACCESS_KEY_ID`, `APPOPS_BEARER`, `SSH_AUTH_SOCK`, `NPM_PASSWORD`, `GOOGLE_APPLICATION_CREDENTIALS`와 그 값이 없음. `USER` 없음. `HOME`·`os.homedir()`·`os.tmpdir()`가 `<output>/.appops-task-cache/sandbox/{home,tmp}` |
+| 취소 | node → `/bin/sleep`, `/bin/sh -c 'sleep & wait'`의 손자, `detached: true`(setsid) `/bin/sleep` 5개 pid가 취소 후 모두 종료. 자손 수집을 끈 상태로 재현하면 setsid 자식 1개(`actual: [ 1564 ]`)가 살아남아 실패함을 확인한 뒤 원복 |
+| 실제 Godot | `/Applications/Godot_mono.app/Contents/MacOS/Godot` `4.7.2.stable.mono.official.ed1daf0bf`. `--headless --version` exit 0, `--headless --path <snapshot> --import` exit 0이고 `.godot/`가 스냅샷 안에 생성, 씬 실행이 `AppOps seatbelt Godot OK <output>/.appops-task-cache/sandbox/home` 출력 |
+| Godot `--export-pack` | macOS 프리셋, `XDG_DATA_HOME=<output>/.appops-task-cache/xdg-data`, `GODOT_TEMPLATES_SOURCE=~/Library/Application Support/Godot`(`export_templates/4.7.2.stable.mono/macos.zip` 존재) → exit 0, `game.pck` 1,736 bytes가 기대 결과물로 인정됨. 템플릿이 없으면 이 하위 단계만 이유와 함께 skip |
+| dotfile 래퍼 실행 | `/opt/homebrew/bin/godot`(→ `~/.local/bin/godot-mono-wrapper`, zsh) `--headless --version` exit 0 |
+
+### 남은 제한
+
+- Windows 네이티브 격리는 지원하지 않는다.
+- iOS/macOS 코드 서명·공증·Xcode(`xcodebuild`)는 이 작업 범위 밖이다. Xcode는 키체인·`~/Library/Developer`·추가 mach 서비스를 요구하므로 현재 프로필로는 동작을 보장하지 않는다.
+- Gradle 데몬 등 loopback TCP나 unix socket이 필요한 도구는 네트워크 전면 차단 때문에 실패할 수 있다(`--no-daemon` 경로 포함 macOS에서 미검증). Unity/Unreal의 Seatbelt 호환성도 미검증이다.
+- Godot 전체 `--export-release`(.app/.zip 번들)는 실측하지 않았다. 실제 plan의 `APPOPS_GODOT_DATA_DIR`는 계속 홈 밖 경로를 요구한다(위 실측의 템플릿 경로는 테스트가 명령을 직접 구성해 사용한 것).
+- 읽기 정책은 "기본 허용 + 민감 영역 차단"이다. `/etc`, `/opt/homebrew`, `/Applications`, `/Library`(키체인 제외) 같은 홈 밖 시스템 경로는 읽을 수 있다. bwrap처럼 필요한 경로만 보이는 구조는 아니다.
+- `sandbox-exec`는 Apple이 deprecated로 표시한 도구다. probe가 매 프로세스 첫 사용 시 실제 동작을 검증하므로 향후 macOS에서 동작하지 않으면 사용 불가로 보고되고 빌드는 실행되지 않는다(fail closed).
+- 취소 시 자손 수집은 부모 pid 기준이므로, 취소 전에 이미 이중 fork로 launchd에 입양된 프로세스는 찾지 못한다.
 
 ## 실제 Godot Linux 전체 내보내기 실측 (2026-09-11, Linux) — 통과
 
@@ -169,6 +227,6 @@ Godot 나머지 타깃(Android/iOS/Windows/macOS)과 Unity·Unreal·네이티브
 
 [원격 러너 프로토콜](runner-protocol.md)의 Bearer 페어링, 검증된 소스 전송, 서버에서 빌드 계획 생성, 결과물 해시 확인을 구현했다. 실제 Linux Godot 원격 빌드(`scripts/verify-remote-godot.ts`)와 생성 게임의 headless 실행을 확인했다. 실행 파일 66,074,584 bytes와 PCK 1,840 bytes를 같은 폴더로 회수했다. 로컬 호스트와 연결된 원격 실행 경계를 통과한 검사이며 다른 OS의 격리 지원 증거는 아니다.
 
-출시 폼은 프로젝트에서 탐지한 대상만 제공한다. iOS에서 준비 완료된 Mac 러너를 선택하면 로컬 Mac 필요 오류만 제외하고 소스 검수 오류는 그대로 검사한다. 현재 CLI의 macOS/Windows 내장 격리는 미지원이므로 별도의 검증된 launcher 없이는 ready가 되지 않는다.
+출시 폼은 프로젝트에서 탐지한 대상만 제공한다. iOS에서 준비 완료된 Mac 러너를 선택하면 로컬 Mac 필요 오류만 제외하고 소스 검수 오류는 그대로 검사한다. macOS 로컬 러너는 Seatbelt probe가 통과하면 ready가 된다. Windows 내장 격리는 미지원이므로 별도의 검증된 launcher 없이는 ready가 되지 않는다.
 
 데모는 Godot·Unity·Unreal·Android·iOS 빌드와 업로드를 모두 큐·이력에서 재현한다. 이 결과물은 명시적인 합성 자료이며 게임 실행 파일이나 스토어 제출용 패키지가 아니다.

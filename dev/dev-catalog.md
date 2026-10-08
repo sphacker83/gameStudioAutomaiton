@@ -4,17 +4,21 @@ Last Updated: 2026-10-01
 
 ## 예정
 
-### AI 성장 운영 자동화 `0/24 (0%)`
-
-[`ai-growth-operations`](active/ai-growth-operations/ai-growth-operations-plan-v2.md) · 생성일 `2026-09-13` · 태스크 수정일 `2026-09-13`
-
-별도 Orca 워커의 2차 기획 문서만 완료. 명시적 요청·기간 위임 안의 광고 A/B 실험·ROAS/ROI·수익률·SNS 고객응대·이슈 수집을 설계했으며 구현은 예정.
+- 없음
 
 ## 진행
+
+### AI 성장 운영 자동화 `23/24 (96%)`
+
+[`ai-growth-operations`](active/ai-growth-operations/ai-growth-operations-plan-v2.md) · 생성일 `2026-09-13` · 태스크 수정일 `2026-09-24`
+
+2026-09-24: 명시적 위임(OperationMandate)·광고 실험(native A/B·관찰 비교)·ROAS/순이익 ROI·단계 증액·가격 실험·지식 기반 고객응대·피드백 이슈·운영 화면을 구현하고 독립 리뷰 결함을 수정했다. 남은 것은 공급자별 실계정 gate와 장기 관찰(T-8.3). [검증](../docs/verification.md#2026-09-24-ai-성장-운영-구현).
 
 ### 앱 출시·마케팅·수익화·커뮤니티 통합 자동화 개발계획 `38/84 (45%)`
 
 [`app-operations-platform`](active/app-operations-platform/app-operations-platform-plan-v11.md) · 생성일 `2026-09-11` · 태스크 수정일 `2026-09-24`
+
+2026-09-24 후속: 실계정 없이 가능한 잔여 코드 공백(스토어 상품·정산·프리뷰, X 미디어, 광고 소재·귀속, 성과 규칙, 장비 이전 차단, macOS Seatbelt 빌드 격리)을 구현했다. 체크리스트는 실계정·타 OS·장기 수용 때문에 유지한다.
 
 2026-09-24: v11 CLI AI 설정·Git/GitHub·tmux 개발 작업·웹 배포 구현과 독립 리뷰 수정 완료. 실제 CLI/MCP·native 대화 재개, 로컬/fixture 검사와 macOS 패키지를 확인했다. 새 23개 중 실계정·OS 수용 4개는 남기며 기존 장기 수용 42개도 유지한다. [사용법과 제한](../docs/ai-operations.md). 아래는 이전 검증 이력이다.
 

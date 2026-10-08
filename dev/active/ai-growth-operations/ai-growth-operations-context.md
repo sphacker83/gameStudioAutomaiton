@@ -1,29 +1,28 @@
 # AI 성장 운영 자동화 Context
 
-Last Updated: 2026-09-13
+Last Updated: 2026-09-24
 
 ## Current Execution Contract
 
 - 유효 plan: [ai-growth-operations-plan-v2.md](ai-growth-operations-plan-v2.md)
-- Active Phase: Phase 1 — 읽기 전용 성장 기준선
-- Active Task: T-1.1 AI 요청·native session·성장 운영 위임 envelope와 데이터 계약 확정
-- 완료 조건: v2 기획 보완은 완료했다. 전체 작업 완료는 T-1.1~T-8.3의 구현·검증·실계정 gate가 별도 승인 후 모두 충족되고, 암묵적 AI 시작이나 미지원 공급자 기능을 완료로 표시하지 않았을 때다.
-- 금지 사항: 현재는 이 디렉터리의 `plan-v2/tasks/context` 외 편집, bootstrap plan 수정, 제품 구현·테스트 변경, catalog/다른 Dev Docs/AGENTS/README 편집, 커밋·push, 외부 광고/가격/메시지/게시·실계정 쓰기를 하지 않는다.
+- Active Phase: Phase 8 — 운영 통합과 실계정 단계적 수용
+- Active Task: T-8.3 공급자별 실계정 gate·장기 관찰
+- 완료 조건: T-1.1~T-8.2 구현·로컬 검증·독립 리뷰 수정까지 끝났다. 전체 작업 완료는 T-8.3의 읽기→시험 쓰기→최소 한도 실집행→장기 관찰이 공급자별로 기록될 때다. 미검증 기능은 비활성으로 둔다.
+- 금지 사항: 실계정 광고비·가격 변경·메시지·게시·push는 사용자의 별도 명시 승인 범위에서만 한다. 제품의 위임·자동화 옵션은 현재 세션의 외부 쓰기 승인이 아니다. 비밀 출력, 기존 plan 수정, 기존 변경 삭제를 하지 않는다.
 
 ## SESSION PROGRESS
 
-### 2026-09-13 — 명시적 요청·CLI 세션·주기 작업 위임 계약으로 v2 보완
+### 2026-09-24 — T-1.1~T-8.2 구현, 독립 리뷰 수정
 
-- 완료: bootstrap plan을 수정하지 않고 `plan-v2`를 만들고 24개 예정 task의 최신 plan backlink를 갱신했다. 채팅/`AI 요청`만 AI 시작점으로 두고, 버튼의 화면·선택 request 기록, 실제 Codex/OpenCode native session ID의 clear 전 resume/clear 후 신규 세션, 구체적 범위·기간의 `OperationMandate`만 주기 실행하는 계약을 반영했다.
-- 결정: 등록·화면 진입·재시작은 AI나 새 mandate를 시작/연장하지 않는다. 재시작은 유효한 기존 mandate만 resume한다. SNS 외부 reply identity에서 policyVersion을 분리하고, fixed-horizon 또는 사전 등록 sequential rule만 효능 판단에 쓰며, 자동 승인 reply도 durable queue를 반드시 통과한다.
-- 수정: `ai-growth-operations-plan-v2.md`는 변경 기준, tasks는 24개 구현 완료 조건과 검증, context는 최신 실행 계약과 재개 순서를 기록한다. 제품 코드와 catalog는 수정하지 않았다.
-- 다음: 구현이 승인되면 T-1.1에서 1차 Agent 계약을 확인한 뒤 `AIRequest`·`AgentSessionBinding`·`OperationMandate`의 저장/상태/실패 계약부터 작은 read-only 수직 단계로 구현한다.
+- 완료: 순수 모듈 `packages/growth/`(types·stats·attribution·decision·scale·pricing·rebalance·knowledge·community·feedback·ai-adapter), 제어 서비스 `apps/controller/growth.ts`(위임·정책·실험·스케줄러·요약), `growth-community.ts`(지식·응대·피드백·제품 링크), `growth-pricing.ts`, `growth-input.ts`, 커넥터 `google-ads-experiments.ts`·`applovin-max-experiments.ts`, UI `apps/desktop/src/views/GrowthView.tsx`·`views/growth/*`, AI 채팅 도구(growth_context·propose_mandate·propose_experiment·save_knowledge)와 선택 스냅샷·clear 감사 기록.
+- 결정: AI가 만든 위임은 `proposed`이고 화면에서 확인 체크 후 확정한다. 화면 양식 위임만 즉시 확정한다. probe는 `read`까지만 판정하고 native 실험 쓰기는 운영자 `verify-capability` 근거 기록 뒤에만 연다. Google App 캠페인 실험(Campaign Mix)은 promote하지 않고 예산 단계 증액으로만 확대한다. native A/B는 공급자 arm 매핑이 확인된 실험 기간의 arm fact만 쓴다. 귀속 창이 끝난 cohort만 지표에 넣는다. 모든 성장 쓰기는 `growth-run`으로 출처를 남겨 중지·만료·수신 거부 때 전송 전 작업을 취소하고, 전송 직전에 위임·승인·원문·인용 지식을 다시 검사한다.
+- 독립 리뷰(구현자와 분리된 세션): 차단 1(시작 전 캠페인 fact로 승자) · 주요 4(열린 귀속 창 판정 정지, 예약된 쓰기 미차단, 위임 일일 합계 누락, 재배분 수신 폭) · 경미 다수를 수정하고 각각 회귀 테스트를 추가했다. 보호 지표 최소 표본은 정할 근거가 없어 넣지 않았다(안전 방향 한계).
+- 검증: `npm run typecheck` 통과, `npm test` 실패 0, `npm run build` 통과, `node scripts/verify-desktop-growth.mjs`(격리 데이터·큐 정지, 실제 Electron) 8개 시나리오 통과. 결과는 [검증 기록](../../../docs/verification.md#2026-09-24-ai-성장-운영-구현).
+- 다음: T-8.3 — 사용자가 시험 계정과 외부 반영 승인 범위를 주면 읽기 검증부터 단계적으로 수용한다.
 
-### 2026-09-13 — 2차 AI 성장 운영 기획 기준선 작성
+### 2026-09-13 — v2 보완·2차 기획 기준선 (이력)
 
-- 완료: 현재 Electron/React/controller/SQLite/vault/광고·수익·소셜·metrics 흐름과 최신 v6→tasks→context, 필수 운영 문서 4개를 대조했다. ROAS/순이익 ROI, 귀속·신선도, 실험 lifecycle, 공급자 경계, 수익화/고객경험 guardrail, AI 고객응대, 피드백 issue loop를 plan과 8 Phase·24 task로 기록했다.
-- 결정: 외부 쓰기 전에 Phase 1 읽기 전용 지표 기준선과 Phase 2 native assignment 관측을 먼저 만든다. 무작위/상호 배타 assignment를 증명하지 못하면 A/B가 아니라 observational comparison이다. X AI 자동 답글은 서면 승인 증거 없이는 draft-only, Threads는 최신 정책 근거 확인 전 draft-only다. 현재 `packages/agent/**`는 1차 root의 진행 중 untracked 코드라 안정 계약으로 간주하지 않는다.
-- 다음: 구현 승인 후 T-1.1에서 사용자의 목표/절대 한도만 한 번 입력받는 `GrowthPolicy` 계약을 확정하고, 기존 프로젝트·계정·정책 값을 자동 재사용하는 read-only 수직 단계를 시작한다.
+- 명시적 요청·CLI 세션·주기 위임 계약으로 plan v2를 만들고 24개 task를 정의했다. 제품 코드는 수정하지 않았다.
 
 ## 다음 세션 읽기 순서
 
@@ -36,6 +35,8 @@ Last Updated: 2026-09-13
 7. `packages/domain/index.ts`, `packages/storage/index.ts`, `apps/controller/{automation,queue,service,campaign-budget,social-automation}.ts`, `packages/{metrics,credentials,connectors,social}/`
 
 ## 핵심 파일과 역할
+
+- 2026-09-24 구현: `packages/growth/*`(계약·지표·통계·결정·규칙), `apps/controller/growth.ts`·`growth-community.ts`·`growth-pricing.ts`·`growth-input.ts`, `packages/connectors/*-experiments.ts`, `apps/desktop/src/views/growth/*`, `scripts/verify-desktop-growth.mjs`, 테스트 `tests/growth-*.test.ts`. 아래 목록은 기획 당시의 재사용 지점이다.
 
 - `dev/active/ai-growth-operations/ai-growth-operations-plan-v2.md` — 현재 유효한 명시적 요청·세션·mandate·성장 운영 계약. bootstrap plan과 충돌하면 v2를 따른다.
 - `packages/domain/index.ts` — 현재 Project policy, Run/effect 상태, MetricFact, social/resource 공개 계약. 성장 도메인 확장 후보.
@@ -51,11 +52,11 @@ Last Updated: 2026-09-13
 - `packages/social/**` — X/Threads/Steam API, 소유권, 토큰, 쓰기 결과 불명 계약.
 - `apps/controller/social-automation.ts` — 프로젝트별 한도/예약/출시 공지/고정 규칙 답글과 중복 방지.
 - `apps/desktop/src/views/{MarketingView,MonetizationView,CommunityView}.tsx` — 목표·실험·결정·응답·issue 운영 UI 확장 지점.
-- `packages/agent/**` — 1차 root가 작성 중인 Codex/OpenCode CLI/MCP 초안. 현재 untracked·미통합 상태이므로 안정화 후 adapter로만 의존한다.
+- `packages/agent/**` — 채팅·native session·MCP 도구. 성장 도구 4종과 선택 스냅샷·clear 감사 기록을 추가했다.
 
 ## 1차 구현 통합 체크포인트 — 2026-09-13
 
-루트가 이후 [1차 v7](../app-operations-platform/app-operations-platform-plan-v7.md)의 요청 기반 버튼·채팅·native resume/clear와 CLI/MCP 도구를 통합했다. 관련 25/25·타입·빌드·Electron 검증 근거는 [결과](../../../docs/verification-assets/ai-requests-20260913.md)에 있다. 위 초안/미통합 서술과 plan-v2의 작성 당시 상태는 과거 관측이다. 2차 OperationMandate·실험·자동응대는 계속 미구현이며 24개 task는 모두 대기다.
+루트가 이후 [1차 v7](../app-operations-platform/app-operations-platform-plan-v7.md)의 요청 기반 버튼·채팅·native resume/clear와 CLI/MCP 도구를 통합했다. 관련 25/25·타입·빌드·Electron 검증 근거는 [결과](../../../docs/verification-assets/ai-requests-20260913.md)에 있다. 위 초안/미통합 서술과 plan-v2의 작성 당시 상태는 과거 관측이다. 2026-09-24에 2차 OperationMandate·실험·자동응대를 구현했다(위 SESSION PROGRESS).
 
 ## 중요한 의사결정
 
@@ -74,14 +75,15 @@ Last Updated: 2026-09-13
 ## 외부 근거와 미확인 조건
 
 - 2026-09-13 확인: Google Ads Experiments overview/reporting은 control/treatment lifecycle과 통계 보고를 제공한다. App campaign에 Campaign Mix를 쓰는 계정 allowlist·정확한 operation은 실계정 미검증이다.
-- 2026-09-13 확인: AppLovin MAX Ad Unit Management API는 `/ad_unit_experiment` 생성/조회/promote/deprecate를 문서화한다. 현재 앱 adapter와 실계정 권한은 없다.
+- 2026-09-13 확인: AppLovin MAX Ad Unit Management API는 `/ad_unit_experiment` 생성/조회/promote/deprecate를 문서화한다. 2026-09-24 adapter를 구현했고(조회·생성·promote·deprecate) 실계정 권한·쓰기는 미검증이다.
 - 2026-09-13 확인: X Automation Rules는 interaction당 1회, opt-in/out, 스팸/민감 필터와 AI reply bot의 사전 서면 승인을 요구한다. 프로젝트 계정 승인 여부는 미확인이다.
 - AppLovin Axon acquisition experiment API는 현재 공식 페이지를 브라우저로 재확인하지 못했고, repository의 2026-09-11 공식 근거와 현재 connector만 확인했다. native A/B 지원으로 주장하지 않는다.
 - Threads AI 자동 고객응대의 최신 정책/심사 조건은 이번 공식 검색에서 확인하지 못했다. 확인 전 자동 발송을 비활성으로 유지한다.
-- 실계정, 실광고비, 실제 가격·상품, 실제 SNS 게시/답글은 모두 미검증이며 이번 기획 작업에서 실행하지 않았다.
+- 2026-09-24 재확인: Google Ads App 캠페인 A/B는 allowlist 전용 Campaign Mix만 가능하고 공식 종료 방법은 End/Graduate다(promote 미사용).
+- 실계정, 실광고비, 실제 가격·상품, 실제 SNS 게시/답글은 모두 미검증이며 구현 세션에서도 실행하지 않았다.
 
 ## 빠른 재개 안내
 
-- 재시작 시 바로 실행할 명령: `git status --short -- dev/active/ai-growth-operations && sed -n '1,280p' dev/active/ai-growth-operations/ai-growth-operations-plan-v2.md`
-- 현재 blocker: 구현 승인이 없으므로 T-1.1 이후는 예정 상태다. 설계 자체의 blocker는 없다.
-- 남아 있는 임시 우회책: 없음
+- 재시작 시 바로 실행할 명령: `node --import tsx --test tests/growth-*.test.ts` → `npm run build && node scripts/verify-desktop-growth.mjs`
+- 현재 blocker: T-8.3은 시험 계정·플랫폼 승인 문서·외부 반영 승인 범위가 필요하다.
+- 감수한 한계: 보호 지표 위반은 최소 표본 없이 점추정으로 중지한다(안전 방향). 순수익 fact가 없는 광고 실험은 광고비 전체를 손실로 계산해 위임 손실 한도가 지출 상한처럼 동작한다. Google 이미지 비율 허용 오차, AppLovin cohort 수익 통화(USD)는 문서 미기재 가정이다. Steam 정정 기준점 저장은 수집 결과 저장과 원자적이지 않다. 규칙 분류는 키워드 기반이라 오탐·미탐이 있다. MAX 실험 결과 지표는 수집하지 않아 MAX 실험은 판정되지 않고 운영자 확인이 필요하다.

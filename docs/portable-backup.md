@@ -68,3 +68,7 @@ These were judged not worth the change now and are recorded so they are not re-l
 - **F11 (double read):** each source file is streamed once to compute size/digest and again to emit frames, and a file changed between passes discards the whole archive after the fact. Single-pass framing with a trailing per-entry digest would avoid the second read; deferred to keep the AAD binding simple. Callers should treat concurrent modification of a source file as discarding the backup.
 - **F13 (heap plaintext):** `snapshotRecords()` returns decrypted credentials as JavaScript strings that cannot be zeroed, and holds the in-memory write lock across all sequential decrypts. The on-disk requirement (no plaintext vault written) is met; this is residual heap exposure and a within-instance write-stall during a fenced backup checkpoint, not a disk or cross-instance correctness issue.
 - **F15 (cosmetic):** the credential layer mixes a user-facing Korean `storage_corrupted` message with developer-facing English messages elsewhere. Left as-is; the Korean message matches the app's user-facing surface.
+
+## 성장 운영 복원 (2026-09-24)
+
+복원하면 active·proposed 위임은 stopped, 진행 중 실험은 action_required, 발송 전 답글 초안은 blocked가 되고 `growth-paused`가 기록된다. 성장 운영 화면에서 다시 허용해도 새 위임을 확정하기 전에는 외부 효과를 만들지 않는다.

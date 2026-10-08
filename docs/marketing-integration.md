@@ -128,3 +128,20 @@ AppLovin Ads 생성은 `activation=LIVE`와 공식 필수 필드(MMP URL, 목표
 ### 프로젝트와 광고 앱의 귀속 (v3 통합)
 
 캠페인·광고 단위 생성의 packageName/appId는 선택한 프로젝트 식별자와 대조하고 다른 프로젝트의 패키지를 덮어쓸 수 없다. Google Ads 소재 생성은 같은 연결·프로젝트에 동기화된 캠페인만 받는다. iOS 숫자 iTunes ID를 쓰는 Google Ads/AppLovin Ads 작업은 연결된 Apple 계정에서 프로젝트 bundle ID에 해당하는 Apple 앱 ID를 확인하고 대조한다. 확인된 공개 식별자 매핑만 저장하며, 다른 숫자 ID나 Apple 연결 부재는 외부 변경 전에 실패한다. Google Ads 지표·캠페인은 이 검증된 매핑으로 프로젝트에 귀속하고 예산 계산에 반영한다. 전송 직전 프로젝트 식별자가 바뀌어도 변경을 중단한다.
+
+## 실험 작업 (2026-09-24)
+
+공식 문서 확인일 2026-09-24: [Google Ads Experiments](https://developers.google.com/google-ads/api/docs/experiments/overview) · [Campaign Mix](https://developers.google.com/google-ads/api/docs/experiments/campaign-mix) · [Reporting](https://developers.google.com/google-ads/api/docs/experiments/reporting) · [AppLovin MAX Ad Unit Management API](https://support.applovin.com/en/max/advanced-features/ad-unit-management-api).
+
+| 작업 | 구분 | 내용 |
+|---|---|---|
+| `probe-experiments` | 읽기 | 권한 거부→action_required, 400/404→unsupported, App 캠페인만 있고 Campaign Mix 미확인→action_required, 확인→read. 쓰기 수준을 스스로 올리지 않는다. |
+| `list-experiments` | 읽기 | 실험·arm(control, traffic split, 캠페인)과 배정 유효성. 완전 목록일 때만 캐시를 교체한다. |
+| `experiment-metrics` | 읽기 | arm 캠페인의 일별 spend·conversions·clicks·impressions·conversion value를 귀속 fact로 저장한다. 같은 캠페인이 여러 arm에 있거나 분할이 없으면 제외 사유를 남긴다. |
+| `create-experiment` | 쓰기 | Campaign Mix만 생성한다. 이름에 `[gso:요청키]`를 붙이고 먼저 검색해 응답 유실 뒤 재사용한다. 일정(ScheduleExperiment)은 장기 작업이라 `reconcile`로 확인한다. |
+| `end-experiment` | 쓰기 | 이미 종료된 실험은 쓰지 않는다. |
+| `promote-experiment` | 쓰기 | system-managed 실험만. Campaign Mix는 거부한다. |
+| `probe/list-ad-unit-experiments` | 읽기 | MAX 광고 단위 실험 조회. 세그먼트 실험은 조회만. |
+| `create/promote/deprecate-ad-unit-experiment` | 쓰기 | 생성 직전에 활성 실험과 패키지 소유권을 다시 확인한다. 현재 활성 실험 이름과 같을 때만 promote/deprecate한다. |
+
+모든 실험 쓰기는 공식 문서와 모의 HTTP로만 검증했다. 실계정 생성·일정·종료는 운영자 검증 게이트(`verify-capability`) 뒤에 사용한다.
