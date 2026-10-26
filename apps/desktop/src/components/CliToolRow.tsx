@@ -44,7 +44,6 @@ export function CliToolRow({
 }) {
   const [pending, setPending] = useState("");
   const [error, setError] = useState("");
-  const demo = api.isDemo();
   const installed = !!connection?.executable;
   async function check() {
     setPending("connection-check");
@@ -68,7 +67,7 @@ export function CliToolRow({
       setPending("");
     }
   }
-  const busy = !!pending || demo;
+  const busy = !!pending;
   return (
     <div className="cli-row">
       <div style={{ minWidth: 0, flex: 1 }}>

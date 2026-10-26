@@ -51,12 +51,7 @@ export interface AppOpsBridge {
     enable(): Promise<ApiResult<AutostartStatusView>>;
     disable(): Promise<ApiResult<AutostartStatusView>>;
   };
-  // 실행 모드(데모/실제) 권한 브리지. 권한은 main이 소유·영속하므로 renderer는 여기서 읽고(setMode로)
-  // 전환을 요청만 한다. 실제(live) 전환은 main 소유의 확인창을 통과해야 반영된다(취소 시 canceled).
-  getMode(): Promise<'demo' | 'live'>;
-  setMode(mode: 'demo' | 'live'): Promise<{ ok: boolean; mode: 'demo' | 'live'; canceled?: boolean }>;
   // 전체(포터블) 암호화 백업 파일 브리지. 대용량 파일을 main이 loopback+bearer로 스트리밍한다.
-  // renderer는 파일 바이트·경로·토큰을 다루지 않는다. 데모/실제 라우팅은 main이 소유한 모드를 따른다.
   // - savePortableBackup(id): 백업을 내려받아 사용자가 고른 위치에 검증 후 원자적 저장(취소 가능).
   // - importPortableBackup(): 네이티브 dialog로 .appopsbackup을 골라 스트리밍 업로드하고 {id,size}를 반환.
   savePortableBackup(id: string): Promise<{ ok: boolean; canceled?: boolean; error?: string }>;
@@ -65,8 +60,7 @@ export interface AppOpsBridge {
   readonly isElectron: true;
 }
 
-// 모든 특권 작업은 main이 소유한 실행 모드(effectiveMode)를 기준으로 판정·라우팅한다. preload는 모드
-// 문자열을 전달하지 않는다 — renderer가 문자열로 권한을 바꿀 수 없게 하기 위함이다. 전환은 setMode로만.
+// 특권 작업은 main의 신뢰 프레임 검사와 실제 저장공간 경계를 따른다.
 const bridge: AppOpsBridge = {
   request: (method, path, body) => ipcRenderer.invoke('appops:request', method, path, body),
   selectArtifact: (target) => ipcRenderer.invoke('appops:selectArtifact', target),
@@ -76,7 +70,6 @@ const bridge: AppOpsBridge = {
   platform: () => ipcRenderer.invoke('appops:platform'),
   lifecycle: {
     status: () => ipcRenderer.invoke('appops:lifecycle:status'),
-    // 변경 계열은 main이 소유한 모드로 데모를 거부한다(renderer가 모드를 넘기지 않는다).
     stopController: () => ipcRenderer.invoke('appops:lifecycle:stopController'),
     restartController: () => ipcRenderer.invoke('appops:lifecycle:restartController'),
   },
@@ -85,9 +78,6 @@ const bridge: AppOpsBridge = {
     enable: () => ipcRenderer.invoke('appops:autostart:enable'),
     disable: () => ipcRenderer.invoke('appops:autostart:disable'),
   },
-  getMode: () => ipcRenderer.invoke('appops:mode:get'),
-  setMode: (mode) => ipcRenderer.invoke('appops:mode:set', mode),
-  // 파일 브리지의 데모/실제 라우팅도 main이 소유한 모드를 따른다(renderer가 모드를 넘기지 않는다).
   savePortableBackup: (id) => ipcRenderer.invoke('appops:portableBackup:save', id),
   importPortableBackup: () => ipcRenderer.invoke('appops:portableBackup:import'),
   isElectron: true,

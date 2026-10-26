@@ -176,14 +176,6 @@ export function ActionForm({
           {spec.description}
         </p>
 
-        {api.isDemo() && (
-          <Notice tone="info" title="데모 실행">
-            <span className="small">
-              선택한 작업은 데모 데이터에 반영됩니다.
-            </span>
-          </Notice>
-        )}
-
         {capability && capability.limitations.length > 0 && !done && (
           <details className="small muted">
             <summary style={{ cursor: 'pointer' }}>서비스별 지원 범위와 참고 사항</summary>
@@ -244,7 +236,7 @@ export function ActionForm({
             {operation === 'upload-build' && projectId && (
               <>
                 {connection.provider==='steam'&&<Field label="결과물 플랫폼" htmlFor="artifact-target"><select id="artifact-target" className="select" value={artifactTarget} onChange={e=>{setArtifactTarget(e.target.value);setImportedArtifactId('');}}>{['windows','macos','linux'].map(target=><option key={target}>{target}</option>)}</select></Field>}
-                <ArtifactPicker key={projectId+':'+artifactTarget} projectId={projectId} target={artifactTarget} assets={state.importedArtifacts??[]} value={importedArtifactId} onChange={id=>{setImportedArtifactId(id);setBuildRunId('');}} refresh={refresh} demo={state.runtime.mode==='demo'} />
+                <ArtifactPicker key={projectId+':'+artifactTarget} projectId={projectId} target={artifactTarget} assets={state.importedArtifacts??[]} value={importedArtifactId} onChange={id=>{setImportedArtifactId(id);setBuildRunId('');}} refresh={refresh}  />
                 {buildRunOptions.length>0&&<details><summary className="small faint">기존 내부 빌드 이력에서 선택</summary>
                 <Field label="업로드할 빌드" htmlFor="act-build" hint="이 프로젝트에서 성공한 빌드만 선택할 수 있습니다.">
                   {buildRunOptions.length === 0 ? (

@@ -45,7 +45,6 @@ function binding(inspection: Inspection | null, provider: Provider) {
 }
 
 export function WebDeploymentsView({ state, goTo }: { state: AppState; goTo: (view: ViewKey) => void }) {
-  const demo = api.isDemo();
   const [projectId, setProjectId] = useState(state.projects[0]?.id ?? "");
   const [provider, setProvider] = useState<Provider>("vercel");
   const [studio, setStudio] = useState<DevelopmentState | null>(null);
@@ -67,13 +66,12 @@ export function WebDeploymentsView({ state, goTo }: { state: AppState; goTo: (vi
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [pending, setPending] = useState("");
-
   const reloadStudio = useCallback(async () => {
     const r = await api.studio<DevelopmentState>("state");
     if (r.ok) setStudio(r.data);
   }, []);
   const inspect = useCallback(async () => {
-    if (!projectId || demo) return;
+    if (!projectId) return;
     const token = ++inspectSeq.current;
     setLoadedFor("");
     const [i, g] = await Promise.all([
@@ -97,7 +95,7 @@ export function WebDeploymentsView({ state, goTo }: { state: AppState; goTo: (vi
       setGit(null);
       setGitError(g.error.message);
     }
-  }, [projectId, demo]);
+  }, [projectId]);
   const inspectRef = useRef(inspect);
   inspectRef.current = inspect;
 
@@ -253,7 +251,6 @@ export function WebDeploymentsView({ state, goTo }: { state: AppState; goTo: (vi
         />
       </Card>
 
-      {demo && <Notice tone="info">데모에서는 화면만 둘러볼 수 있습니다. 실제 운영 모드에서 서비스를 연결하세요.</Notice>}
       {error && (
         <Notice tone="error" action={<TerminalSetupButton error={error} onTerminal={(id) => openTerminal(id)} />}>
           {error}
@@ -264,15 +261,13 @@ export function WebDeploymentsView({ state, goTo }: { state: AppState; goTo: (vi
       <Card
         title="배포 준비"
         actions={
-          <button className="btn btn--sm" disabled={demo || !!pending} onClick={() => void inspect()}>
+          <button className="btn btn--sm" disabled={!!pending} onClick={() => void inspect()}>
             <RefreshCw size={13} aria-hidden />
             다시 확인
           </button>
         }
       >
-        {demo ? (
-          <p className="muted small">실제 운영 모드에서 프로젝트 설정을 자동으로 감지합니다.</p>
-        ) : !ready && !inspectError && !gitError ? (
+        {!ready && !inspectError && !gitError ? (
           <Spinner />
         ) : (
           <div className="checklist">
@@ -298,7 +293,7 @@ export function WebDeploymentsView({ state, goTo }: { state: AppState; goTo: (vi
               action={
                 <button
                   className={`btn btn--sm${linked ? "" : " btn--primary"}`}
-                  disabled={demo || !!pending || !connection?.executable}
+                  disabled={!!pending || !connection?.executable}
                   onClick={async () => {
                     const r = await act<TerminalSession>("web-link");
                     // 패널을 닫아도 연결 CLI가 끝나면 현재 프로젝트 설정을 다시 확인한다.
@@ -363,13 +358,13 @@ export function WebDeploymentsView({ state, goTo }: { state: AppState; goTo: (vi
             ) : (
               `커밋된 소스 스냅샷을 ${PROVIDERS[provider]} ${production ? "Production(공개 사이트)" : "Preview"}로 배포합니다.`
             )}
-            {blockers.length > 0 && !demo && (
+            {blockers.length > 0 && (
               <span style={{ display: "block", color: "var(--warn)", marginTop: 4 }}>{blockers.join(" ")}</span>
             )}
           </span>
           <button
             className={`btn ${production ? "btn--danger" : "btn--primary"}`}
-            disabled={demo || !!pending || blockers.length > 0 || !git?.head}
+            disabled={!!pending || blockers.length > 0 || !git?.head}
             onClick={async () => {
               const requested = projectId;
               // 화면에서 확인한 커밋만 배포한다. 그사이 HEAD가 바뀌면 서비스가 거부한다.
@@ -419,7 +414,7 @@ export function WebDeploymentsView({ state, goTo }: { state: AppState; goTo: (vi
                         </span>
                         <button
                           className="btn btn--sm"
-                          disabled={demo || !!pending}
+                          disabled={!!pending}
                           onClick={async () => {
                             const r = await act<WebDeployment>("web-resolve", { id: d.id, approved: true });
                             await reloadStudio();
@@ -440,7 +435,7 @@ export function WebDeploymentsView({ state, goTo }: { state: AppState; goTo: (vi
                     )}
                     <button
                       className={`btn btn--sm${d.status === "action_required" ? " btn--primary" : ""}`}
-                      disabled={demo || !!pending || d.status === "running" || !d.dispatched}
+                      disabled={!!pending || d.status === "running" || !d.dispatched}
                       title={!d.dispatched ? "서비스로 전송되지 않은 배포입니다." : "서비스의 배포 상태와 사이트 응답을 조회합니다."}
                       onClick={async () => {
                         const r = await act<WebDeployment>("web-check", { id: d.id });

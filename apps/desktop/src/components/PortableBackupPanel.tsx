@@ -2,9 +2,8 @@
 // - 설정 백업(프로젝트·정책·설정)과 별개로, 자격 증명·산출물·이력까지 담은 암호화 아카이브를 다룬다.
 // - 생성/진행/실패/재시도·내보내기·가져오기·복원 준비·덮어쓰기 복원을 한 화면에서 제공한다.
 // - 대용량 파일은 데스크톱에서 main이 loopback+bearer로 스트리밍한다(renderer는 바이트·경로·토큰을
-//   만지지 않는다). 브라우저(데모/미리보기)는 인증 세션으로 파일 입력·다운로드 폴백을 제공한다.
+//   만지지 않는다). 브라우저는 인증 세션으로 파일 입력·다운로드 폴백을 제공한다.
 // - 암호는 각 작업마다 입력하며 요청 직후 비운다. 저장·기록·오류 표시에 남기지 않는다.
-// - 데모는 격리 저장공간에서만 복원하며 실제 제어 서비스를 절대 재시작하지 않는다.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Archive, Download, KeyRound, Lock, RefreshCcw, RotateCw, ShieldCheck, Upload } from 'lucide-react';
 import { api } from '../api';
@@ -61,7 +60,6 @@ export function PortableBackupPanel({ refresh }: { refresh: () => Promise<void> 
   const [restoreTarget, setRestoreTarget] = useState<PortableBackupRecord | null>(null);
   const mounted = useRef(true);
   const fileInput = useRef<HTMLInputElement>(null);
-
   const load = useCallback(async () => {
     const res = await api.getPortableBackups();
     if (!mounted.current) return;
@@ -368,7 +366,6 @@ function RestoreModal({
   const ready = restore?.status === 'ready';
   const preparing = restore?.status === 'preparing' || (pending && !restore);
   const failed = restore?.status === 'failed';
-
   const doPrepare = useCallback(async () => {
     if (!passValid || pending) return;
     setPending(true);
@@ -402,13 +399,8 @@ function RestoreModal({
         }
         if (mounted.current) setRestarting(false);
         await refresh().catch(() => {});
-      } else if (res.data.restored === true) {
-        // 데모 복원: 격리 데모 재활성 성공(restored:true)일 때만 완료로 확정한다.
-        setCommitted({ restartRequired: false, confirmed: true });
-        await refresh().catch(() => {});
       } else {
-        // 커밋은 반환됐지만 restored:true가 없다 — 완료로 표시하지 않고 재시도를 안내한다.
-        setErr('데모 복원이 완료되었는지 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+        setErr('복원 전환에 필요한 재시작 정보를 확인하지 못했습니다. 운영·복구 화면에서 상태를 확인해 주세요.');
       }
     } else {
       setErr(res.error.message);
@@ -427,17 +419,13 @@ function RestoreModal({
         footer={<button className="btn btn--primary" onClick={onClose}>닫기</button>}
       >
         {err && <Notice tone="error" title="복원 상태 확인 필요">{err}</Notice>}
-        {committed.restartRequired && !committed.confirmed ? (
+        {!committed.confirmed ? (
           <Notice tone="warn" title={restarting ? '복원 후 재시작 중…' : '복원 전환 확인 대기'}>검증한 백업을 선택했습니다. 제어 서비스가 복원한 데이터로 시작했는지 확인한 뒤 완료로 표시합니다.</Notice>
-        ) : committed.restartRequired ? (
+        ) : (
           <Notice tone="info" title={restarting ? '복원 후 재시작 중…' : '복원 완료 — 제어 서비스를 다시 시작했습니다'}>
             전체 백업을 복원하고 제어 서비스를 다시 시작했습니다. 프로젝트는 <strong>원본 폴더 연결</strong>이 필요할 수
             있고, 복원된 자동화는 <strong>일시중지</strong> 상태이며, 계정 자격 증명은 <strong>보존</strong>되었습니다. 화면을
             새로고침해 최신 상태를 확인하세요.
-          </Notice>
-        ) : (
-          <Notice tone="info" title="데모 복원 완료">
-            데모 저장공간에만 복원했습니다. 실제 제어 서비스는 재시작하지 않았습니다.
           </Notice>
         )}
       </Modal>

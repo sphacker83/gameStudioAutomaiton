@@ -49,7 +49,7 @@ export function IntegrationPanel({
   connections: Connection[];
   resources: ExternalResource[];
 }) {
-  const demo = api.isDemo();
+
   const [data, setData] = useState<ProjectIntegrationState | null>(null);
   const [phase, setPhase] = useState<'loading' | 'ready' | 'pending' | 'error'>('loading');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -61,7 +61,6 @@ export function IntegrationPanel({
   const [busy, setBusy] = useState<null | 'preview' | 'apply' | 'rollback'>(null);
   const [actionMsg, setActionMsg] = useState<{ tone: 'ok' | 'warn' | 'error'; text: string } | null>(null);
   const mounted = useRef(true);
-
   const spec = PROVIDERS.find((p) => p.id === providerId)!;
   const eligibleConnections = useMemo(
     () => connections.filter((c) => c.provider === spec.conn),
@@ -253,7 +252,7 @@ export function IntegrationPanel({
             >
               {busy === 'preview' ? <Spinner /> : <FileCode2 size={14} />} 미리보기 생성
             </button>
-            {demo && <span className="muted">데모: 합성 프로젝트에 대한 미리보기입니다.</span>}
+
           </div>
         </div>
 

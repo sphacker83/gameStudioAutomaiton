@@ -12,7 +12,6 @@ export function useDevelopmentPolicy({ projectId, projectRef, act, setInfo }: De
   const [savedPolicy, setSavedPolicy] = useState<DevelopmentPolicy | null>(null);
   const [policyFor, setPolicyFor] = useState("");
   const dirty = !!policy && !!savedPolicy && JSON.stringify(policy) !== JSON.stringify(savedPolicy);
-
   const load = useCallback(async () => {
     if (!projectId) return;
     const r = await api.studio("policy", { projectId });
@@ -132,7 +131,7 @@ export function PolicyCard({
               <span className="field__hint">인증 정보가 없는 격리 환경의 작업 worktree에서 실행합니다.</span>
             </label>
             <div className="row">
-              <button className="btn btn--primary" disabled={!dirty || !!pending || api.isDemo()} onClick={onSave}>
+              <button className="btn btn--primary" disabled={!dirty || !!pending} onClick={onSave}>
                 자동화 설정 저장
               </button>
               {dirty && (

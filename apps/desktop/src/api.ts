@@ -4,12 +4,6 @@ import type { GooglePlayRelease } from '../../../packages/domain/google-play-rel
 // - Electron: window.appOps.request(...)가 main을 거쳐 bearer를 붙여 호출한다.
 // - 브라우저 개발 모드: fetch('/api' + path). Vite 프록시가 인증을 주입한다(코디네이터 구현).
 // 모든 응답은 계약대로 ApiResult<T>다. 화면은 여기서 해제된 값을 사용한다.
-//
-// 실행 모드(데모/실제): 같은 화면·요청·작업 계약을 쓰되, 데모는 논리 경로 앞에 `/demo` 를
-// 붙여 별도 저장공간·어댑터(루트 구현)로 라우팅한다. 기본값은 데모 미리보기이며, 선호 모드는
-// 브라우저 저장소에 보존한다. 모드 전환 시 화면은 상태를 비우고 다시 마운트하므로(appState)
-// 이전 모드의 폼이 새 모드를 대상으로 삼지 못한다. 실제 모드도 완전히 동일한 논리 경로를 쓴다.
-
 import type {
   ApiResult,
   AppState,
@@ -85,32 +79,13 @@ export interface IntegrationPreviewInput {
   productIds?: string[];
 }
 
-export type RuntimeMode = 'demo' | 'live';
-const MODE_KEY = 'appops.runtime.mode';
-
-// 브라우저 폴백(데모·미리보기)에서 메모리로 다루는 전체 백업 크기 상한. 초과 시 데스크톱 앱을 안내한다
+// 브라우저 폴백에서 메모리로 다루는 전체 백업 크기 상한. 초과 시 데스크톱 앱을 안내한다
 // (죽은 버튼 없이 명확한 안내). 네이티브 경로는 디스크 스트리밍이라 이 제한을 받지 않는다.
 const BROWSER_PORTABLE_MAX = 128 * 1024 * 1024; // 128 MiB
 // 암호화 백업 파일 매직 'APPOPSB1'의 바이트(브라우저 파일 입력 사전 검증). main도 동일 매직을 확인한다.
 const BACKUP_MAGIC_BYTES = [0x41, 0x50, 0x50, 0x4f, 0x50, 0x53, 0x42, 0x31];
 
-// 선호 모드를 브라우저 저장소에서 읽는다. 없거나 접근 불가면 데모를 기본값으로 한다.
-function readStoredMode(): RuntimeMode {
-  try {
-    const v = typeof localStorage !== 'undefined' ? localStorage.getItem(MODE_KEY) : null;
-    return v === 'live' ? 'live' : 'demo';
-  } catch {
-    return 'demo';
-  }
-}
-
 // UI에서 다루기 쉽도록 오류를 던지지 않고 결과 유니온을 그대로 노출한다.
-//
-// 모드 불변식: 이 클라이언트 인스턴스의 실행 모드는 생성 시 저장소에서 한 번 읽어 고정한다(readonly).
-// 모드는 인스턴스 수명 동안 절대 바뀌지 않으므로, 이 클라이언트로 만든 모든 요청·콜백·pending
-// promise(폴더 선택 등)는 시작 당시의 모드만 대상으로 삼는다. 전환은 선호만 저장한 뒤 페이지를
-// 전체 새로고침(location.reload)하여 새 인스턴스를 만드므로, 이전 모드의 stale promise가 새 트리로
-// 들어가거나 다른 모드에 쓰기를 보내는 일이 원천적으로 불가능하다.
 export class ApiClient {
   saveStoreReleaseGuide(id: string, provider: GuidedStore, input: StoreReleaseRecord) {
     return this.request<Project>('PUT', `/projects/${encodeURIComponent(id)}/release-guide/${provider}`, input);
@@ -134,69 +109,8 @@ export class ApiClient {
   cancelAgent(id: string) { return this.request<AgentTask>('POST', `/agent/${encodeURIComponent(id)}/cancel`, {}); }
   agentImage(id: string, mediaAssetId: string) { return this.request<{ dataUrl: string }>('POST', `/agent/${encodeURIComponent(id)}/image`, { mediaAssetId }); }
   readonly isElectron: boolean;
-  // 이 인스턴스의 고정 모드. request()가 데모일 때 논리 경로 앞에 `/demo` 를 붙인다. 네이티브에서는
-  // bootstrap()이 main 소유의 권한 모드로 1회 확정하며, 이후에는 절대 바뀌지 않는다(전환=전체 새로고침).
-  private currentMode: RuntimeMode;
-  private bootstrapped = false;
-
   constructor() {
     this.isElectron = typeof window !== 'undefined' && !!window.appOps?.isElectron;
-    // 동기 최선 추정: 브라우저는 저장소, 네이티브는 부트스트랩 전 임시값(안전 기본값 데모).
-    // 네이티브의 진짜 권한 모드는 bootstrap()이 main에서 받아 확정한다(데이터 디스패치 전에 1회).
-    this.currentMode = this.isElectron ? 'demo' : readStoredMode();
-  }
-
-  // 네이티브: main 소유의 권한 모드를 부트스트랩한다(어떤 데이터 요청/디스패치보다 먼저 1회). 이후 이
-  // 인스턴스의 모드는 불변이다 — 전환은 항상 전체 새로고침으로 새 인스턴스를 만들어 적용한다.
-  // 브라우저: 생성 시 읽은 저장소 값을 유지한다(별도 조회 없음). 재진입 호출은 무시한다.
-  async bootstrap(): Promise<RuntimeMode> {
-    if (this.bootstrapped) return this.currentMode;
-    if (this.isElectron && window.appOps?.getMode) {
-      try {
-        const m = await window.appOps.getMode();
-        this.currentMode = m === 'live' ? 'live' : 'demo';
-      } catch {
-        this.currentMode = 'demo'; // 조회 실패 = 안전 기본값
-      }
-    }
-    this.bootstrapped = true;
-    return this.currentMode;
-  }
-
-  getMode(): RuntimeMode {
-    return this.currentMode;
-  }
-
-  // 선호 모드만 저장소에 기록한다(브라우저 폴백 전용). 인스턴스 모드는 바꾸지 않는다(불변). 네이티브는
-  // 권한을 main이 소유·영속하므로 이 값을 쓰지 않는다. 저장 성공 여부를 반환한다.
-  setPreferredMode(mode: RuntimeMode): boolean {
-    try {
-      if (typeof localStorage !== 'undefined') {
-        localStorage.setItem(MODE_KEY, mode);
-        return true;
-      }
-    } catch {
-      /* 저장소 접근 불가 */
-    }
-    return false;
-  }
-
-  // 모드 전환 요청. 네이티브: main 소유의 확인창(실제 전환 시 단 하나의 확인)을 거쳐 권한을 바꾸고
-  // 결과를 돌려준다(취소 시 canceled). 브라우저: 선호만 저장한다. 어느 경우든 실제 적용은 호출부가
-  // 전체 새로고침으로 새 인스턴스를 만들어 수행한다(불변 클라이언트 + reload로 stale 유입 차단).
-  async requestModeSwitch(next: RuntimeMode): Promise<{ ok: boolean; canceled?: boolean }> {
-    if (next === this.currentMode) return { ok: true };
-    if (this.isElectron && window.appOps?.setMode) {
-      const r = await window.appOps.setMode(next);
-      if (r.ok && r.mode === next) return { ok: true };
-      return { ok: false, canceled: r.canceled };
-    }
-    this.setPreferredMode(next);
-    return { ok: true };
-  }
-
-  isDemo(): boolean {
-    return this.currentMode === 'demo';
   }
 
   private async browserRequest<T>(method: string, fullPath: string, body?: unknown): Promise<ApiResult<T>> {
@@ -231,23 +145,12 @@ export class ApiClient {
     }
   }
 
-  // 완성된 전송 경로(`/demo` 접두 포함)로 실제 요청을 보낸다.
-  private dispatch<T>(method: string, fullPath: string, body?: unknown): Promise<ApiResult<T>> {
-    if (this.isElectron && window.appOps) {
-      return window.appOps.request<T>(method, fullPath, body);
-    }
-    return this.browserRequest<T>(method, fullPath, body);
-  }
-
-  // 논리 경로(`/state` 등)를 받아 모드에 따라 `/demo` 를 1회 붙여 전송한다.
   request<T>(method: string, path: string, body?: unknown): Promise<ApiResult<T>> {
-    const full = this.currentMode === 'demo' ? `/demo${path}` : path;
-    return this.dispatch<T>(method, full, body);
-  }
-
-  // 데모 전용 경로. 현재 모드와 무관하게 항상 `/demo` 접두를 사용한다(초기화·시나리오).
-  private demoRequest<T>(method: string, path: string, body?: unknown): Promise<ApiResult<T>> {
-    return this.dispatch<T>(method, `/demo${path}`, body);
+    if (path === '/demo' || path.startsWith('/demo/')) {
+      return Promise.resolve({ ok: false, error: { code: 'unsupported_mode', message: '데모 화면은 더 이상 지원하지 않습니다.' } });
+    }
+    if (this.isElectron && window.appOps) return window.appOps.request<T>(method, path, body);
+    return this.browserRequest<T>(method, path, body);
   }
 
   async selectArtifact(target:string):Promise<string|null> {
@@ -509,8 +412,7 @@ export class ApiClient {
     return this.request<DiagnosticsReport>('POST', '/operations/diagnostics', {});
   }
 
-  // pairingToken은 러너를 최초 결합할 때 쓰는 1회용 비밀이다. 실제 모드에서는 필수이며,
-  // 데모에서는 생략한다(루트가 합성 결합).
+  // pairingToken은 러너를 최초 결합할 때 필요한 1회용 비밀이다.
   registerRunner(input: {
     label: string;
     platform: 'linux' | 'darwin' | 'win32';
@@ -529,7 +431,6 @@ export class ApiClient {
   }
 
   // --- 운영 준비(설치·엔진/SDK 경로·설치 진행) ---
-  // 데모/실제 같은 논리 경로다. 데모는 별도 저장공간·합성 설치, 실제는 검증된 설치를 사용한다(루트 구현).
   getSetup() {
     return this.request<PreparationState>('GET', '/setup');
   }
@@ -569,7 +470,6 @@ export class ApiClient {
   saveStoreApp(id: string, input: { provider: StoreProvider; connectionId: string; appId: string }) {
     return this.request<Project>('PUT', `/projects/${encodeURIComponent(id)}/store-app`, input);
   }
-  // 실제 읽기 전용 API 조회(데모는 합성 시뮬레이션). verifiedAt은 서버가 조회에 성공해야만 기록한다.
   checkStoreApp(id: string, input: { provider: StoreProvider }) {
     return this.request<Project>('POST', `/projects/${encodeURIComponent(id)}/store-app/check`, input);
   }
@@ -591,24 +491,18 @@ export class ApiClient {
 
   // --- 앱/제어 서비스 수명주기 (IPC, 데스크톱 전용) ---
   // HTTP가 아닌 IPC로 동작하므로 제어 서비스가 내려가도 상태 조회·재시작이 가능하다.
-  // 데모 모드에서는 실제 제어 서비스·OS 자동 시작을 절대 바꾸지 않는다(변경 계열은 차단).
   private desktopOnly<T>(): ApiResult<T> {
     return { ok: false, error: { code: 'desktop_only', message: '수명주기 제어는 데스크톱 앱에서만 사용할 수 있습니다.' } };
-  }
-  private demoBlocked<T>(): ApiResult<T> {
-    return { ok: false, error: { code: 'demo_blocked', message: '데모에서는 실제 제어 서비스·자동 시작을 바꾸지 않습니다.' } };
   }
   async lifecycleStatus(): Promise<ApiResult<LifecycleStatus>> {
     if (this.isElectron && window.appOps) return window.appOps.lifecycle.status();
     return this.desktopOnly<LifecycleStatus>();
   }
   async stopController(): Promise<ApiResult<{ stopped: boolean; wasRunning: boolean }>> {
-    if (this.isDemo()) return this.demoBlocked();
     if (this.isElectron && window.appOps) return window.appOps.lifecycle.stopController();
     return this.desktopOnly();
   }
   async restartController(): Promise<ApiResult<{ running: boolean }>> {
-    if (this.isDemo()) return this.demoBlocked();
     if (this.isElectron && window.appOps) return window.appOps.lifecycle.restartController();
     return this.desktopOnly();
   }
@@ -617,20 +511,16 @@ export class ApiClient {
     return this.desktopOnly<AutostartStatusView>();
   }
   async autostartEnable(): Promise<ApiResult<AutostartStatusView>> {
-    if (this.isDemo()) return this.demoBlocked();
     if (this.isElectron && window.appOps) return window.appOps.autostart.enable();
     return this.desktopOnly<AutostartStatusView>();
   }
   async autostartDisable(): Promise<ApiResult<AutostartStatusView>> {
-    if (this.isDemo()) return this.demoBlocked();
     if (this.isElectron && window.appOps) return window.appOps.autostart.disable();
     return this.desktopOnly<AutostartStatusView>();
   }
 
   // --- 전체(포터블) 암호화 백업 ---
   // 설정 백업(위)과 별개다. 프로젝트·정책·설정에 더해 자격 증명·산출물·이력까지 암호화 아카이브로 담는다.
-  // 모든 경로는 모드에 따라 /api 또는 /api/demo로 라우팅된다(불변 모드 클라이언트). 데모는 격리 저장공간만
-  // 대상으로 하며 실제 제어 서비스를 재시작하지 않는다.
   getPortableBackups(): Promise<ApiResult<PortableBackupState>> {
     return this.request<PortableBackupState>('GET', '/operations/portable-backups');
   }
@@ -648,17 +538,12 @@ export class ApiClient {
     );
   }
   // 커밋(명시적 덮어쓰기): 실제 모드는 restartRequired:true를 돌려주고 호출부가 명시적으로 재시작한다.
-  // 데모는 격리 복원만 수행하고 restartRequired:false(restored:true)를 돌려준다 — 실제 서비스는 손대지 않는다.
   commitPortableRestore(restoreId: string): Promise<ApiResult<{ restartRequired: boolean; restored?: true }>> {
     return this.request<{ restartRequired: boolean; restored?: true }>(
       'POST',
       '/operations/portable-backups/commit-restore',
       { restoreId },
     );
-  }
-
-  private modePrefix(): string {
-    return this.currentMode === 'demo' ? '/demo' : '';
   }
 
   // 내보내기(다운로드→디스크). Electron은 네이티브 스트리밍 저장(길이·SHA-256 검증 후 원자적 저장),
@@ -690,7 +575,7 @@ export class ApiClient {
       return { ok: false, error: { code: 'read_failed', message: '파일을 읽을 수 없습니다.' } };
     }
     try {
-      const res = await fetch(`/api${this.modePrefix()}/operations/portable-backups/import`, {
+      const res = await fetch(`/api/operations/portable-backups/import`, {
         method: 'POST',
         headers: { 'content-type': 'application/octet-stream', accept: 'application/json' },
         body: file,
@@ -716,7 +601,7 @@ export class ApiClient {
   // 데스크톱과 동등하게 선언 길이·SHA-256·매직을 검증한다. 하나라도 불일치/누락이면 저장하지 않는다.
   private async downloadPortableBackupInBrowser(id: string): Promise<{ ok: boolean; canceled?: boolean; error?: string }> {
     try {
-      const res = await fetch(`/api${this.modePrefix()}/operations/portable-backups/${encodeURIComponent(id)}/download`, {
+      const res = await fetch(`/api/operations/portable-backups/${encodeURIComponent(id)}/download`, {
         headers: { accept: 'application/vnd.appops.backup' },
       });
       if (!res.ok) return { ok: false, error: `내보내기 실패 (HTTP ${res.status}).` };
@@ -765,20 +650,7 @@ export class ApiClient {
     }
   }
 
-  // --- 데모 전용 제어 ---
-  // 데모 저장공간만 초기화한다(실제 자원에 영향 없음). 항상 `/demo` 접두를 사용한다.
-  resetDemo() {
-    return this.demoRequest<{ reset: true }>('POST', '/reset', {});
-  }
-
-  // 다음 적합한 데모 작업의 실패·복구 경로를 재현한다(네트워크/인증/심사 오류 등).
-  setDemoScenario(scenario: DemoScenario) {
-    return this.demoRequest<{ scenario: DemoScenario }>('POST', '/scenario', { scenario });
-  }
 }
-
-// 데모 시나리오: 다음 적합한 데모 작업에서 재현할 실패·복구 경로.
-export type DemoScenario = 'normal' | 'network-error' | 'auth-expired' | 'review-rejected';
 
 // 백업 복원 결과. 백업은 프로젝트·정책·운영 설정의 논리 백업이며 계정 키·거래 원장은 보존한다.
 // 복원된 자동화는 안전을 위해 일시중지된다(automationsPaused 수).

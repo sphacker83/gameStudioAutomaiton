@@ -21,8 +21,6 @@ import {
   isLoopbackDevUrl,
   isPortableBackupId,
   isTrustedFrameUrl,
-  normalizePortableMode,
-  normalizeStoredMode,
   openPinnedBackupSource,
   parseDownloadExpectation,
   portableBackupDownloadPath,
@@ -98,26 +96,8 @@ function trackController<T>(task: Promise<T>): Promise<T> {
   return task;
 }
 
-// 실행 모드(demo/live) 권한은 main이 소유·영속한다(renderer localStorage 밖). 안전 기본값은 데모.
-// - 모든 특권 변경(수명주기·자동 시작)·파일 브리지(백업 저장/가져오기)·일반 요청 라우팅이 이 값을
-//   기준으로 네임스페이스를 결속한다. renderer 문자열은 이 권한을 바꿀 수 없다.
-// - 실제(live) 전환은 setMode 핸들러의 main 소유 확인창을 통과해야만 반영된다.
-let effectiveMode: PortableBackupMode = 'demo';
-function desktopModePath(): string {
-  return join(getDataDirectory(), 'desktop-mode.json');
-}
-async function loadEffectiveMode(): Promise<void> {
-  try {
-    const raw = await readFile(desktopModePath(), 'utf8');
-    effectiveMode = normalizeStoredMode(JSON.parse(raw));
-  } catch {
-    effectiveMode = 'demo'; // 파일 없음/파싱 실패 = 안전 기본값(데모)
-  }
-}
-async function persistEffectiveMode(mode: PortableBackupMode): Promise<void> {
-  await mkdir(getDataDirectory(), { recursive: true }).catch(() => {});
-  await writeFile(desktopModePath(), JSON.stringify({ mode }), { mode: 0o600 });
-}
+// 데스크톱은 실제 저장공간만 사용한다. 이전 desktop-mode.json 설정은 읽지 않는다.
+const effectiveMode: PortableBackupMode = 'live';
 
 // 신뢰하는 창(BrowserWindow)의 webContents 신원. IPC는 이 창에서만 받는다(임의 webContents 차단).
 let mainWindowId: number | null = null;
@@ -372,8 +352,7 @@ async function forwardRequest(method: string, path: string, body: unknown): Prom
   if (!isAllowedApiPath(method, path)) {
     return errorResult('path_not_allowed', `허용되지 않은 요청입니다: ${method} ${path}`);
   }
-  // 요청 네임스페이스(/demo 대 실제)는 main 소유의 effectiveMode에 결속한다. 손상된 renderer가
-  // 데모 세션에서 실제 경로를(또는 그 반대) 밀어 넣어도 여기서 거부한다(권한은 문자열로 못 바꾼다).
+  // 데스크톱에서는 데모 경로를 허용하지 않는다.
   if (!requestNamespaceMatches(effectiveMode, path)) {
     return errorResult('mode_mismatch', '요청이 현재 실행 모드와 일치하지 않습니다.');
   }
@@ -434,18 +413,10 @@ function isTrustedSender(e: { senderFrame: WebFrameMain | null; sender?: { id: n
   return isTrustedFrame(e.senderFrame);
 }
 
-// 데모 모드는 실제 제어 서비스·OS 자동 시작을 절대 바꾸지 않는다는 불변식을 main 경계에서 강제한다.
-// 권한 판정은 main 소유의 effectiveMode만 근거로 한다(renderer가 넘긴 문자열이 아니다). 'live'가
-// 아니면(데모·미상) 실제 변경을 거부한다(안전 기본값).
-function demoBlocksMutation(): ApiResult<never> | null {
-  if (effectiveMode === 'live') return null;
-  return errorResult('demo_blocked', '데모에서는 실제 제어 서비스·자동 시작을 바꾸지 않습니다.');
-}
-
 // ---------------------------------------------------------------------------
 // 전체(포터블) 암호화 백업 파일 브리지 (대용량 스트리밍).
 // - renderer는 파일 바이트·경로·토큰을 절대 다루지 않는다. 파일 선택은 네이티브 dialog, 전송은
-//   loopback+bearer로 main만 수행한다. 실행 모드(demo/live)는 main 소유의 effectiveMode를 쓴다.
+//   loopback+bearer로 main만 수행하며 실제 저장공간을 사용한다.
 // - 다운로드: Content-Length+SHA-256을 필수로 요구하고(없으면 저장 거부), 배타적(O_EXCL) 0600 임시
 //   파일에 스트리밍하며 정확한 바이트를 해싱해 길이·해시가 일치할 때만 파일+부모 디렉터리를 fsync한
 //   뒤 원자적 rename으로 목적지를 교체한다(검증 전 기존 파일 미덮어쓰기, 실패 시 원본 보존).
@@ -620,10 +591,9 @@ function registerIpc(): void {
   });
 
   ipcMain.handle('appops:selectArtifact',async(e,target:unknown)=>{
-    if(!isTrustedSender(e)||effectiveMode!=='live'||typeof target!=='string'||!['android','ios','windows','macos','linux'].includes(target))return null;
-    const mode=effectiveMode;
+    if(!isTrustedSender(e)||typeof target!=='string'||!['android','ios','windows','macos','linux'].includes(target))return null;
     const result=await dialog.showOpenDialog({title:'외부 빌드 결과물 선택',properties:[['android','ios'].includes(target)?'openFile':'openDirectory'],...(['android','ios'].includes(target)?{filters:[{name:'배포 결과물',extensions:target==='android'?['aab','apk']:['ipa']}]}:{})});
-    return effectiveMode===mode&&!result.canceled?result.filePaths[0]??null:null;
+    return !result.canceled?result.filePaths[0]??null:null;
   });
 
   ipcMain.handle('appops:selectToolFile', async (e) => {
@@ -666,8 +636,6 @@ function registerIpc(): void {
   ipcMain.handle('appops:lifecycle:stopController', async (e): Promise<ApiResult<{ stopped: boolean; wasRunning: boolean }>> => {
     if (!isTrustedSender(e)) return errorResult('forbidden', '신뢰할 수 없는 호출입니다.');
     if (shuttingDown) return errorResult('app_closing', '앱을 종료하고 있습니다.');
-    const blocked = demoBlocksMutation();
-    if (blocked) return blocked;
     const outcome = await trackController(stopControllerLifecycle(makeControllerDeps()));
     return { ok: true, data: { stopped: outcome.stopped, wasRunning: outcome.wasRunning } };
   });
@@ -675,8 +643,6 @@ function registerIpc(): void {
   ipcMain.handle('appops:lifecycle:restartController', async (e): Promise<ApiResult<{ running: boolean }>> => {
     if (!isTrustedSender(e)) return errorResult('forbidden', '신뢰할 수 없는 호출입니다.');
     if (shuttingDown) return errorResult('app_closing', '앱을 종료하고 있습니다.');
-    const blocked = demoBlocksMutation();
-    if (blocked) return blocked;
     const outcome = await trackController(restartControllerLifecycle(makeControllerDeps()));
     if (outcome.status === 'failed') return errorResult(outcome.error.code, outcome.error.message);
     return { ok: true, data: { running: true } };
@@ -695,8 +661,6 @@ function registerIpc(): void {
 
   ipcMain.handle('appops:autostart:enable', async (e): Promise<ApiResult<AutostartStatus>> => {
     if (!isTrustedSender(e)) return errorResult('forbidden', '신뢰할 수 없는 호출입니다.');
-    const blocked = demoBlocksMutation();
-    if (blocked) return blocked;
     const { method, target, deps, transient } = autostartContext();
     if (transient) {
       return errorResult(
@@ -713,8 +677,6 @@ function registerIpc(): void {
 
   ipcMain.handle('appops:autostart:disable', async (e): Promise<ApiResult<AutostartStatus>> => {
     if (!isTrustedSender(e)) return errorResult('forbidden', '신뢰할 수 없는 호출입니다.');
-    const blocked = demoBlocksMutation();
-    if (blocked) return blocked;
     try {
       const { method, target, deps } = autostartContext();
       return { ok: true, data: await removeAutostart(method, target, deps) };
@@ -723,47 +685,8 @@ function registerIpc(): void {
     }
   });
 
-  // 실행 모드 권한 브리지(main 소유). getMode는 현재 effectiveMode를 돌려주고, setMode는 전환을 반영한다.
-  // - 실제(live)로의 전환은 main 소유의 명시적 사용자 확인창을 통과해야만 반영된다(renderer 확인창을
-  //   대체하는 단 하나의 확인 — 이중 프롬프트·재로그인 없음). 취소하면 모드는 바뀌지 않는다.
-  // - 데모로의 전환은 파괴적이지 않으므로 추가 확인 없이 즉시 반영한다.
-  // 어느 경우든 renderer가 넘긴 문자열이 권한을 바꾸지 못한다 — 값은 main이 정하고 디스크에 영속한다.
-  ipcMain.handle('appops:mode:get', (e): PortableBackupMode => (isTrustedSender(e) ? effectiveMode : 'demo'));
-
-  ipcMain.handle(
-    'appops:mode:set',
-    async (e, next: unknown): Promise<{ ok: boolean; mode: PortableBackupMode; canceled?: boolean }> => {
-      if (!isTrustedSender(e)) return { ok: false, mode: 'demo' };
-      const target = normalizePortableMode(next);
-      if (target === effectiveMode) return { ok: true, mode: effectiveMode };
-      if (target === 'live') {
-        const win = BrowserWindow.fromWebContents(e.sender);
-        const options = {
-          type: 'warning' as const,
-          buttons: ['취소', '실제 모드로 전환'],
-          defaultId: 1,
-          cancelId: 0,
-          title: '실제 계정 모드로 전환',
-          message: '실제 계정 모드로 전환할까요?',
-          detail:
-            '실제 모드에서는 연결된 실제 계정과 저장된 권한·정책·검증된 빌드로 작업합니다. 게시·업로드·캠페인 등 외부 쓰기가 실제 공급자에 반영될 수 있습니다. 데모의 실행·자원은 실제 계정으로 복사되지 않습니다.',
-          noLink: true,
-        };
-        const choice = win ? await dialog.showMessageBox(win, options) : await dialog.showMessageBox(options);
-        if (choice.response !== 1) return { ok: false, mode: effectiveMode, canceled: true };
-      }
-      effectiveMode = target;
-      try {
-        await persistEffectiveMode(target);
-      } catch (err) {
-        console.error('[appops] 실행 모드 저장 실패', (err as Error)?.name);
-      }
-      return { ok: true, mode: effectiveMode };
-    },
-  );
-
   // 전체(포터블) 백업 파일 브리지. 대용량 암호화 파일을 main만 loopback+bearer로 스트리밍한다.
-  // 데모/실제 라우팅은 main 소유의 effectiveMode를 따른다(renderer가 모드를 넘기지 않는다).
+  // renderer는 저장공간을 변경할 수 없다.
   ipcMain.handle('appops:portableBackup:save', async (e, id: unknown): Promise<PortableSaveResult> => {
     if (!isTrustedSender(e)) return { ok: false, error: '신뢰할 수 없는 호출입니다.' };
     return portableBackupSave(id);
@@ -896,8 +819,6 @@ if (CONTROLLER_ONLY) {
       }
     });
     app.whenReady().then(async () => {
-      // 실행 모드 권한을 디스크에서 먼저 적재한다(없으면 데모). 창이 뜨기 전에 확정한다.
-      await loadEffectiveMode();
       if (shuttingDown) return;
       registerIpc();
       // 화면을 먼저 띄우고, 컨트롤러 준비는 백그라운드에서 진행한다(renderer는 준비될 때까지 재시도한다).

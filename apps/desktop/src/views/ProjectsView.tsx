@@ -42,7 +42,6 @@ export function ProjectsView({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   useAgentScope(selectedId ?? undefined);
   const [registerOpen, setRegisterOpen] = useState(false);
-
   const selected = selectedId ? state.projects.find((p) => p.id === selectedId) ?? null : null;
 
   if (selected) {
@@ -178,16 +177,6 @@ function ProjectRow({ project, onOpen }: { project: Project; onOpen: () => void 
   );
 }
 
-// 데모 샘플 엔진: 경로 없이 등록할 수 있는 합성 샘플. 루트가 `/demo/<engine>` 경로의 basename으로
-// 합성 프로젝트를 만든다.
-const DEMO_SAMPLES: { engine: string; label: string; desc: string }[] = [
-  { engine: 'godot', label: 'Godot 샘플', desc: '데스크톱·모바일 멀티타깃' },
-  { engine: 'unity', label: 'Unity 샘플', desc: 'Android·iOS·데스크톱' },
-  { engine: 'unreal', label: 'Unreal 샘플', desc: 'Windows·Linux' },
-  { engine: 'android', label: '네이티브 Android 샘플', desc: 'Android' },
-  { engine: 'ios', label: '네이티브 iOS 샘플', desc: 'iOS' },
-];
-
 function RegisterProjectModal({
   state,
   refresh,
@@ -199,7 +188,7 @@ function RegisterProjectModal({
   onClose: () => void;
   onCreated: (p: Project) => void;
 }) {
-  const demo = api.isDemo();
+
   const [path, setPath] = useState('');
   const add = useAction<Project>(refresh);
 
@@ -221,48 +210,16 @@ function RegisterProjectModal({
       footer={
         <>
           <button className="btn" onClick={onClose}>
-            {demo ? '닫기' : '취소'}
+            취소
           </button>
-          {!demo && (
-            <button className="btn btn--primary" onClick={() => void register(path)} disabled={add.pending || !path.trim()}>
+          <button className="btn btn--primary" onClick={() => void register(path)} disabled={add.pending || !path.trim()}>
               {add.pending ? <Spinner /> : <FolderPlus size={15} />} 등록하고 검수
             </button>
-          )}
         </>
       }
     >
       <div className="stack" style={{ gap: 12 }}>
-        {demo ? (
-          <>
-            <Notice tone="info" title="데모 샘플 프로젝트">
-              폴더 경로 없이 엔진 샘플을 선택하면 루트가 합성 프로젝트를 만들어 탐지·검수·빌드·출시 흐름을 실제와 동일하게
-              보여줍니다. 실제 파일을 읽거나 수정하지 않습니다.
-            </Notice>
-            <div className="stack" style={{ gap: 8 }}>
-              {DEMO_SAMPLES.map((s) => (
-                <button
-                  key={s.engine}
-                  className="btn"
-                  style={{ justifyContent: 'space-between', width: '100%' }}
-                  disabled={add.pending}
-                  onClick={() => void register(`/demo/${s.engine}`)}
-                >
-                  <span className="row" style={{ gap: 8 }}>
-                    <FolderPlus size={15} /> <strong>{s.label}</strong>
-                  </span>
-                  <span className="small muted">{s.desc}</span>
-                </button>
-              ))}
-            </div>
-            {add.pending && (
-              <p className="small muted row" style={{ gap: 8 }}>
-                <Spinner /> 샘플을 등록하는 중…
-              </p>
-            )}
-            {add.error && <Notice tone="error" title="등록 실패">{add.error.message}</Notice>}
-          </>
-        ) : (
-          <>
+        <>
             <Notice tone="info">
               선택한 폴더와 하위 폴더에서 프로젝트를 찾습니다. 한 개면 자동으로 연결하고, 여러 개면 선택할 폴더를 안내합니다.
             </Notice>
@@ -288,7 +245,6 @@ function RegisterProjectModal({
               <p className="small muted">이미 {state.projects.length}개 프로젝트가 등록되어 있습니다. 같은 폴더의 중복 등록은 제어 서비스가 검사합니다.</p>
             )}
           </>
-        )}
       </div>
     </Modal>
   );
@@ -319,7 +275,6 @@ function ProjectDetail({
   const [relinkPath, setRelinkPath] = useState('');
   const relink = useAction<Project>(refresh);
   const hasStore = eligibleStoreConnections(state).length > 0;
-
   const projectRuns = useMemo(() => state.runs.filter((r) => r.projectId === project.id), [state.runs, project.id]);
   const c = findingCounts(project.findings);
 
@@ -510,7 +465,6 @@ function BuildTab({
   const [exportPreset, setExportPreset] = useState('');
   const [scheme, setScheme] = useState('');
   const [runnerId, setRunnerId] = useState('');
-
   const blockingErrors = project.findings.filter((f) => f.severity === 'error');
   const isGodot = project.engine === 'godot';
   const isIos = target === 'ios' || project.engine === 'ios';

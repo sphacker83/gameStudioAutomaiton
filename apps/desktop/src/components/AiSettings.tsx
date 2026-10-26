@@ -46,8 +46,6 @@ export function AiSettings() {
   const [pending, setPending] = useState("");
   const [terminal, setTerminal] = useState("");
   const { watch, settle } = useTerminalWatch();
-  const demo = api.isDemo();
-
   const detect = useCallback(async () => {
     const [agent, cli] = await Promise.all([
       api.agentState(),
@@ -129,7 +127,7 @@ export function AiSettings() {
         {value.provider !== "auto" && (
           <button
             className="btn btn--sm"
-            disabled={!!pending || demo}
+            disabled={!!pending}
             title="CLI에 저장된 모델 목록을 읽습니다."
             onClick={() => void loadModels(value.provider as AgentProvider)}
           >
@@ -260,7 +258,7 @@ export function AiSettings() {
             }}
           />
         ))}
-        {demo && <Notice tone="info">데모에서는 CLI를 설치하거나 로그인하지 않습니다.</Notice>}
+
       </Card>
       {terminal && (
         <StudioTerminal

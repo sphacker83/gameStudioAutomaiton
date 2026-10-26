@@ -42,7 +42,6 @@ import { SettingsView } from './views/SettingsView';
 import { DevelopmentView } from './views/DevelopmentView';
 import { WebDeploymentsView } from './views/WebDeploymentsView';
 import { GrowthView } from './views/GrowthView';
-import { ModeControl } from './components/ModeControl';
 import { AgentPanel } from './components/AgentPanel';
 import { DeviceTransferBanner } from './components/DeviceTransferBanner';
 import { AgentActions } from './components/AgentActions';
@@ -166,12 +165,8 @@ const NAV: NavDef[] = [
 const NAV_BY_KEY = Object.fromEntries(NAV.map((n) => [n.key, n])) as Record<ViewKey, NavDef>;
 
 export function App() {
-  // 실행 모드 권한은 네이티브에서 main이 소유하고 부트스트랩으로 확정되며, 이 세션 동안 불변이다
-  // (전환=전체 새로고침). mode는 그 확정된 클라이언트 모드(api.getMode())를 반영한다. 전환/확인은
-  // ModeControl이 담당하고, 그동안의 오버레이는 로컬 switching으로 표시한다.
-  const { state, phase, refresh, refreshing, lastUpdatedAt, error, mode } = useAppState();
+  const { state, phase, refresh, refreshing, lastUpdatedAt, error } = useAppState();
   const [view, setView] = useState<ViewKey>('agent');
-  const [switching, setSwitching] = useState(false);
   const [scope, setScope] = useState<Pick<AgentRequestContext, 'projectId' | 'connectionId' | 'selection'>>({});
   const [agentOpen, setAgentOpen] = useState(false);
   const closeAgent = useCallback(() => setAgentOpen(false), []);
@@ -182,8 +177,6 @@ export function App() {
   }, []);
   const navigate = (next: ViewKey) => { setScope({}); setView(next); };
   const requestContext: AgentRequestContext = { screen: view, ...scope };
-
-
   const actionRequiredCount = useMemo(() => {
     if (!state) return 0;
     const conn = state.connections.filter(
@@ -199,12 +192,6 @@ export function App() {
     <AgentActions.Provider value={{ setScope, request: requestAgent }}>
     <div className="app-shell">
       <OperationNotifications state={state} />
-      {switching && (
-        <div className="switch-overlay" role="status" aria-live="polite">
-          <Spinner large />
-          <span>모드 전환 중…</span>
-        </div>
-      )}
       <aside className="sidebar" aria-label="주 메뉴">
         <div className="sidebar__brand">
           <div className="sidebar__brand-mark" aria-hidden>
@@ -263,7 +250,6 @@ export function App() {
           <div className="topbar__meta">
             <button className="btn btn--primary btn--sm" disabled={!state} title={`${SCREEN_REQUESTS[view].label} 요청 작성`} onClick={() => requestAgent(requestContext)}><Bot size={15} />AI 요청</button>
             <button className="btn btn--sm" disabled={!state} onClick={() => requestAgent(requestContext)}>AI 대화</button>
-            <ModeControl mode={mode} serverMode={state?.runtime.mode} setSwitching={setSwitching} />
             {actionRequiredCount > 0 && (
               <span className="badge badge--error" title="사용자 조치가 필요한 항목">
                 <AlertOctagon size={13} /> 조치 필요 {actionRequiredCount}

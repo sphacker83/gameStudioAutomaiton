@@ -70,7 +70,7 @@ export function AgentPanel({ state, projectId, requestContext, onRegister }: { s
         {onRegister && <button className="btn btn--sm" onClick={onRegister}><FolderPlus size={14} />프로젝트 등록</button>}
       </div>
       <p className="small muted" style={{ margin: 0 }}>클리어는 대화만 비웁니다. 확정한 성장 운영 위임(주기 작업)은 계속 실행되므로, 멈추려면 성장 운영 화면에서 위임을 직접 중지하세요.{task?.clearedSessions?.length ? ` · 이전에 클리어한 CLI 세션 ${task.clearedSessions.length}개는 다시 이어 쓰지 않습니다.` : ''}</p>
-      {api.isDemo() ? <Notice tone="info">데모에서는 실제 AI를 실행하지 않습니다.</Notice> : agent && !agent.runtimes.some(runtime => runtime.executable) && <Notice tone="warn">Codex 또는 OpenCode CLI 설치·로그인이 필요합니다.</Notice>}
+      {agent && !agent.runtimes.some(runtime => runtime.executable) && <Notice tone="warn">Codex 또는 OpenCode CLI 설치·로그인이 필요합니다.</Notice>}
       <div className="agent-chat__messages" role="log" aria-label="AI 대화" aria-live="polite">
         {!task?.conversation.length && <div className="agent-chat__empty"><Bot size={28} /><p>어떤 작업을 도와드릴까요?</p><span>원하는 요청을 작성해 주세요.</span></div>}
         {task?.conversation.map((entry, index) => <div key={`${task.sessionGeneration}-${index}`} className={`agent-message agent-message--${entry.role}`}>

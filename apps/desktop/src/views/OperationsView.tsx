@@ -22,7 +22,6 @@ import { api, type DiagnosticsReport, type RestoreResult } from '../api';
 import type { ViewKey } from '../App';
 import { formatDateTime, formatRelative } from '../format';
 import { useAction } from '../useAction';
-import { DemoControls } from '../components/DemoControls';
 import { PortableBackupPanel } from '../components/PortableBackupPanel';
 import { Badge, Card, EmptyState, Field, Modal, Notice, Spinner } from '../components/ui';
 import type {
@@ -66,7 +65,6 @@ export function OperationsView({ state, refresh, goTo }: { state: AppState; refr
   const [ops, setOps] = useState<OperationsState | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
   const reload = useCallback(async () => {
     setError(null);
     const res = await api.getOperations();
@@ -107,11 +105,7 @@ export function OperationsView({ state, refresh, goTo }: { state: AppState; refr
 
   return (
     <div className="stack">
-      {state.runtime.mode === 'demo' && (
-        <Notice tone="info">
-          데모 운영 상태입니다. 러너·백업·진단은 데모 저장공간에서 동작하며 실제 기기·자원에 영향을 주지 않습니다.
-        </Notice>
-      )}
+
       {error && <Notice tone="error">{error}</Notice>}
 
       <ReadinessCard checks={ops.readiness} goTo={goTo} />
@@ -126,7 +120,7 @@ export function OperationsView({ state, refresh, goTo }: { state: AppState; refr
       <PortableBackupPanel refresh={refresh} />
 
       <DiagnosticsCard />
-      {state.runtime.mode === 'demo' && <DemoControls state={state} refresh={refresh} />}
+
     </div>
   );
 }
@@ -264,9 +258,7 @@ function RegisterRunnerModal({ reload, onClose }: { reload: () => Promise<void>;
   const [endpoint, setEndpoint] = useState('');
   const [pairingToken, setPairingToken] = useState('');
   const add = useAction<RunnerRegistration>(reload);
-  // pairingToken은 1회용 결합 비밀이다. 실제 모드에서만 입력하며 필수, 데모에서는 받지 않는다.
-  const demo = api.isDemo();
-  const blocked = !label.trim() || !endpoint.trim() || (!demo && !pairingToken.trim());
+  const blocked = !label.trim() || !endpoint.trim() || (!pairingToken.trim());
 
   async function submit() {
     if (blocked) return;
@@ -275,7 +267,7 @@ function RegisterRunnerModal({ reload, onClose }: { reload: () => Promise<void>;
         label: label.trim(),
         platform,
         endpoint: endpoint.trim(),
-        pairingToken: demo ? undefined : pairingToken.trim(),
+        pairingToken: pairingToken.trim(),
       }),
     );
     if (res?.ok) onClose();
@@ -311,8 +303,7 @@ function RegisterRunnerModal({ reload, onClose }: { reload: () => Promise<void>;
         <Field label="엔드포인트" required htmlFor="rn-endpoint" hint="러너 제어 서비스의 loopback/내부 주소.">
           <input id="rn-endpoint" className="input mono" value={endpoint} onChange={(e) => setEndpoint(e.target.value)} placeholder="https://…" spellCheck={false} />
         </Field>
-        {!demo && (
-          <Field
+        <Field
             label="결합 토큰(pairing token)"
             required
             htmlFor="rn-token"
@@ -328,7 +319,6 @@ function RegisterRunnerModal({ reload, onClose }: { reload: () => Promise<void>;
               spellCheck={false}
             />
           </Field>
-        )}
         {add.error && <Notice tone="error" title="등록 실패">{add.error.message}</Notice>}
       </div>
     </Modal>

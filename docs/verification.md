@@ -249,3 +249,11 @@ Steam 공지 쓰기·신규 앱의 필수 Console 단계, macOS/Windows 내장 �
 - 실제 macOS Electron의 별도 데이터·데모에서 iOS 테스트/정식 심사/공개·공개 방식 3종, Steam 심사/수정 요청·기간/비대상·공개 조건 차단, 각 10/10, 날짜·메모/복사·저장/취소를 확인했다. 플랫폼/프로젝트 전환·재로드 후 기록 보존, 편집 중 전환 잠금·새로고침 유지, 미래 날짜/공개 조건 변경 실패와 복구, 키보드 탭 이동·빈 프로젝트 안내를 확인했다. 1360px 및 1000px viewport의 시각 배치·가로 넘침 없음을 확인했다.
 - 실행 근거: `tmp/store-release-guide/{tests,review-regression,typecheck,build,diff-check}.log`, `ui-qa.txt`, `ios-desktop.png`, `ios-compact.png`, `steam-desktop.png`, `steam-compact.png`, `steam-compact-form.png`. 공식 URL 허용·목적지와 revision 충돌·프로세스 재시작은 API/보안 검사 근거다. 새 확장 UI에서 외부 브라우저나 실제 스토어를 호출하지 않았다.
 - 범위: 수동 확인 기록을 제공하는 출시 도우미 구현이다. 실계정 심사 제출·게시·배포, 새 설치 패키지, Windows/Linux GUI 수용은 수행하지 않았다. Apple·Steam 공식 정책 링크와 사용법은 [스토어 연동 안내](store-integration.md#iossteam-출시-도우미)를 따른다.
+
+## 2026-10-26 데모 화면 제거
+
+- 사용자 요청으로 상단 모드 표시/전환·확인창·전환 오버레이, 데모 초기화/실패 시나리오, 샘플 프로젝트·합성 계정/키·복구 안내를 제거했다. 실제 등록·자격 증명·결합 토큰·외부 결과물 입력은 유지한다.
+- 화면 API는 실제 경로만 사용한다. Electron의 모드 조회/전환 IPC와 저장 설정 로딩을 제거했다. 이전 `desktop-mode.json` 및 브라우저 `appops.runtime.mode`는 무시하며 직접 `/demo` 호출도 거부한다. controller의 격리 데모 API와 테스트 fixture, 기존 데이터 파일은 유지한다.
+- `npm test`: 740개 중 **723 통과·실패 0·환경 skip 17**. `npm run typecheck`·`npm run build` 통과. 새 클라이언트 검사 2개는 이전 선호 무시·실제 HTTP/IPC 경로·데모 요청 미전송을 확인한다. 사용처가 없어진 저장 모드 정규화 검사 1개는 구현과 함께 제거했다. 기존 Vite 번들 크기 경고는 남아 있다.
+- 실제 macOS Electron: 별도 폴더에 `desktop-mode.json={"mode":"demo"}`를 둔 상태에서 실제 운영 시작, 모드 IPC 노출 없음, 직접 데모 요청 거부를 확인했다. 실제 Godot 폴더 등록·iOS 출시 기록 저장·Steam 분리·앱/controller 재시작 후 기록 보존을 확인했다. 15개 메뉴의 데모 UI 없음·페이지 오류 없음, 1360px/1000px 화면 배치와 가로 넘침 없음을 확인했다.
+- 자체 리뷰로 제거된 UI와 실제 운영 입력·백업/수명주기 경계를 확인했다. 실행 근거는 `tmp/remove-demo-ui/{tests,typecheck,build,diff-check}.log`, `ui-qa.txt`, `release-live.png`, `operations-live.png`, `connections-compact.png`다. 실계정 외부 쓰기·OS 자동 시작 변경·설치 패키지 및 Windows/Linux GUI는 이번에 실행하지 않았다.

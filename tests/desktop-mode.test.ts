@@ -7,7 +7,6 @@ import assert from 'node:assert/strict';
 import {
   isAllowedApiPath,
   isTrustedFrameUrl,
-  normalizeStoredMode,
   parseDownloadExpectation,
   requestNamespaceMatches,
 } from '../apps/desktop/electron/security.js';
@@ -46,23 +45,6 @@ test('허용 경로여도 네임스페이스가 실행 모드와 어긋나면 �
   // 반대로 데모 세션의 올바른 경로는 둘 다 통과한다.
   assert.equal(isAllowedApiPath(method, '/demo/state'), true);
   assert.equal(requestNamespaceMatches('demo', '/demo/state'), true);
-});
-
-// ---------------------------------------------------------------------------
-// 저장된 로컬 모드 선호 정규화: 'live'만 실제, 그 외/누락/손상은 데모(안전 기본값).
-// ---------------------------------------------------------------------------
-test('normalizeStoredMode는 live만 실제로, 나머지는 데모로 정규화한다', () => {
-  assert.equal(normalizeStoredMode({ mode: 'live' }), 'live');
-  assert.equal(normalizeStoredMode({ mode: 'demo' }), 'demo');
-  assert.equal(normalizeStoredMode('live'), 'live'); // 평문도 허용
-  assert.equal(normalizeStoredMode('demo'), 'demo');
-  // 누락·손상·대소문자 불일치·잘못된 타입은 모두 데모(안전 기본값).
-  assert.equal(normalizeStoredMode({}), 'demo');
-  assert.equal(normalizeStoredMode({ mode: 'LIVE' }), 'demo');
-  assert.equal(normalizeStoredMode({ mode: 1 }), 'demo');
-  assert.equal(normalizeStoredMode(null), 'demo');
-  assert.equal(normalizeStoredMode(undefined), 'demo');
-  assert.equal(normalizeStoredMode('garbage'), 'demo');
 });
 
 // ---------------------------------------------------------------------------

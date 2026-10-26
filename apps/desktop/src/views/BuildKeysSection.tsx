@@ -283,15 +283,12 @@ function RegisterBuildCredentialModal({ refresh, onClose }: { refresh: () => Pro
   const [storePassword, setStorePassword] = useState('');
   const [keyAlias, setKeyAlias] = useState('');
   const [keyPassword, setKeyPassword] = useState('');
-
-  // 데모: 실제 비밀을 받지 않는다. 라벨+종류만 받아 루트가 합성 자격 증명을 생성한다.
-  const demo = api.isDemo();
   const sshMissing = !host.trim() || !privateKey.trim() || !knownHosts.trim();
   const androidMissing = !keystoreBase64 || !storePassword.trim() || !keyAlias.trim();
-  const blocked = !label.trim() || (demo ? false : kind === 'ssh' ? sshMissing : androidMissing);
+  const blocked = !label.trim() || (kind === 'ssh' ? sshMissing : androidMissing);
 
   function buildCredentials(): Record<string, string> {
-    if (demo) return {}; // 데모: 비밀 없음. 루트가 합성 키를 생성한다.
+
     if (kind === 'ssh') {
       const c: Record<string, string> = { host: host.trim(), privateKey, knownHosts };
       if (port.trim()) c.port = port.trim();
@@ -340,12 +337,7 @@ function RegisterBuildCredentialModal({ refresh, onClose }: { refresh: () => Pro
           <input className="input" value={label} onChange={(e) => setLabel(e.target.value)} placeholder={kind === 'ssh' ? '사설 애드온 SSH' : '출시 서명 키'} />
         </Field>
 
-        {demo ? (
-          <Notice tone="info" title="데모 키 등록">
-            데모에서는 라벨과 종류만 입력합니다. 실제 비밀(비공개 키·키스토어·암호)은 받지 않으며, 루트가 합성
-            자격 증명을 생성해 화면과 흐름을 실제와 동일하게 보여줍니다. 실제 모드에서는 정식 비밀 입력 폼이 표시됩니다.
-          </Notice>
-        ) : kind === 'ssh' ? (
+        {kind === 'ssh' ? (
           <>
             <p className="small muted" style={{ margin: 0 }}>
               사설 저장소에서 빌드 의존성을 가져오는 데 쓰는 배포용 SSH 키입니다. 알려진 호스트(known_hosts)를 고정해
@@ -483,11 +475,9 @@ function RotateBuildCredentialModal({
     return c;
   }
 
-  const demo = api.isDemo();
   const creds = credentials();
   const labelChanged = label.trim() !== cred.label && label.trim() !== '';
-  // 데모: 비밀 없이 합성 회전(버전 증가)을 허용한다. 실제: 라벨 변경 또는 새 비밀이 있어야 한다.
-  const nothingToDo = demo ? false : Object.keys(creds).length === 0 && !labelChanged;
+  const nothingToDo = Object.keys(creds).length === 0 && !labelChanged;
 
   async function submit() {
     if (nothingToDo) return;
@@ -523,11 +513,7 @@ function RotateBuildCredentialModal({
         <Field label="키 이름">
           <input className="input" value={label} onChange={(e) => setLabel(e.target.value)} />
         </Field>
-        {demo ? (
-          <Notice tone="info">
-            데모 키는 라벨만 수정하거나, 비밀 입력 없이 합성 회전을 실행할 수 있습니다(버전 증가). 실제 비밀은 받지 않습니다.
-          </Notice>
-        ) : cred.kind === 'ssh' ? (
+        {cred.kind === 'ssh' ? (
           <>
             <SecretFileOrText label="새 비공개 키" hint="회전할 때만 입력." value={privateKey} onChange={setPrivateKey} accept=".pem,.key,text/plain" />
             <Field label="패스프레이즈" hint="새 키에 암호가 있으면 입력.">

@@ -60,7 +60,7 @@ export function TerminalSetupButton({
     <span className="row" style={{ gap: 6 }}>
       <button
         className="btn btn--sm"
-        disabled={pending || api.isDemo()}
+        disabled={pending}
         onClick={async () => {
           setPending(true);
           setFailure("");

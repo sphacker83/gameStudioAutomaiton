@@ -28,7 +28,7 @@ export function DevelopmentView({
   refresh: () => Promise<void>;
   goTo: (view: ViewKey) => void;
 }) {
-  const demo = api.isDemo();
+
   const requests = useDevelopmentRequests(state.projects[0]?.id ?? "");
   const { projectId, pending, error, info } = requests;
   const [tab, setTab] = useState<Tab>("issue");
@@ -37,12 +37,11 @@ export function DevelopmentView({
   const [terminal, setTerminal] = useState("");
   const autoOpened = useRef(new Set<string>());
   const { watch, settle } = useTerminalWatch();
-
   const reloadStudio = useCallback(async () => {
     const r = await api.studio("state");
     if (r.ok) setStudio(r.data);
   }, []);
-  const repo = useGitWorkspace(requests, demo);
+  const repo = useGitWorkspace(requests);
   const items = useGithubItems(requests);
   const policy = useDevelopmentPolicy(requests);
   const tasks = (studio?.tasks ?? []).filter((t) => t.projectId === projectId);
@@ -143,9 +142,7 @@ export function DevelopmentView({
           <dd className="mono small">{project?.rootPath ?? "—"}</dd>
           <dt>Git</dt>
           <dd>
-            {demo ? (
-              <span className="muted">데모에서는 조회하지 않습니다.</span>
-            ) : git ? (
+            {git ? (
               <span className="row" style={{ gap: 6 }}>
                 <GitBranch size={13} aria-hidden />
                 <strong>{git.branch}</strong>
@@ -203,12 +200,6 @@ export function DevelopmentView({
         </div>
       </Card>
 
-      {demo && (
-        <Notice tone="info">
-          데모에서는 화면만 둘러볼 수 있습니다. 저장소·로그인·터미널·AI 작업은 실제 운영 모드에서
-          시작하세요.
-        </Notice>
-      )}
       {error && (
         <Notice tone="error" action={<TerminalSetupButton error={error} onTerminal={(id) => openTerminal(id)} />}>
           {error}
@@ -217,7 +208,7 @@ export function DevelopmentView({
       {info && <Notice tone="info">{info}</Notice>}
 
       {tab === "git" && (
-        <GitTab workspace={repo} requests={requests} demo={demo} projectName={project?.name} refresh={refresh} />
+        <GitTab workspace={repo} requests={requests}  projectName={project?.name} refresh={refresh} />
       )}
 
       {(tab === "issue" || tab === "pr") && (
@@ -227,7 +218,7 @@ export function DevelopmentView({
           requests={requests}
           tasks={tasks}
           git={git}
-          demo={demo}
+
           onGitTab={() => switchTab("git")}
           onOpenTask={(id) => {
             work.show(id);

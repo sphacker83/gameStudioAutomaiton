@@ -69,7 +69,7 @@ export function GrowthView({ state, goTo }: { state: AppState; goTo: (view: View
           {state.projects.map(project => <option key={project.id} value={project.id}>{project.name}</option>)}
         </select>
       </Field>
-      {api.isDemo() && <span className="small muted">데모 모드: 데모 저장공간에만 기록하며 실제 계정에는 쓰지 않습니다.</span>}
+
     </div>
 
     {growth?.paused && <Notice tone="warn" title="백업 복원 후 성장 자동화가 멈춰 있습니다"

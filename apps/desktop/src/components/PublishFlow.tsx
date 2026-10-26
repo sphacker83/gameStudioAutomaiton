@@ -21,7 +21,6 @@ export function eligibleStoreConnections(state: AppState): Connection[] {
   });
 }
 
-
 export function PublishModal({
   project,
   state,
@@ -39,7 +38,6 @@ export function PublishModal({
 }) {
   const act = useAction<ReleasePipeline>(refresh);
   const requestKey = useRef(newIdempotencyKey());
-
   const targets = ['android','ios','windows','macos','linux'];
   const [target, setTarget] = useState<string>(state.connections.find(c=>c.id===presetConnectionId)?.provider==='app-store'?'ios':state.connections.find(c=>c.id===presetConnectionId)?.provider==='google-play'?'android':project.targets[0]??'android');
   const stores = useMemo(() => eligibleStoreConnections(state).filter(connection => (target==='android'?['google-play']:target==='ios'?['app-store']:target==='macos'?['app-store','steam']:['steam']).includes(connection.provider)), [state, target]);
@@ -49,7 +47,6 @@ export function PublishModal({
   const [releaseNotes, setReleaseNotes] = useState('');
   const [importedArtifactId,setImportedArtifactId]=useState('');
   const done = act.result;
-
   const blocked = !target || !stores.some(connection => connection.id === connectionId) || !track.trim() || !importedArtifactId;
 
   async function submit() {
@@ -141,7 +138,7 @@ export function PublishModal({
               <textarea id="pub-notes" className="textarea" value={releaseNotes} onChange={(e) => setReleaseNotes(e.target.value)} rows={3} placeholder="이번 업데이트 내용" />
             </Field>
 
-            <ArtifactPicker key={project.id+':'+target} projectId={project.id} target={target} assets={state.importedArtifacts??[]} value={importedArtifactId} onChange={setImportedArtifactId} refresh={refresh} demo={state.runtime.mode==='demo'} />
+            <ArtifactPicker key={project.id+':'+target} projectId={project.id} target={target} assets={state.importedArtifacts??[]} value={importedArtifactId} onChange={setImportedArtifactId} refresh={refresh}  />
 
             <p className="small faint" style={{ margin: 0 }}>
               실제 운영은 저장된 권한·정책과 가져온 결과물을 사용합니다. 업로드 성공이 곧 공개·심사 통과를 뜻하지 않습니다.

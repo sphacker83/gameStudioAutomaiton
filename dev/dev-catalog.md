@@ -18,6 +18,8 @@ Last Updated: 2026-10-26
 
 [`app-operations-platform`](active/app-operations-platform/app-operations-platform-plan-v11.md) · 생성일 `2026-09-11` · 태스크 수정일 `2026-10-26`
 
+2026-10-26 추가 완료: 데모 화면·전환·샘플/초기화 UI를 제거했다. 실제 운영 시작과 기존 기록 보존, 전체 723 통과/17 환경 skip·타입·빌드·Electron 검증. [근거](../docs/verification.md#2026-10-26-데모-화면-제거).
+
 2026-10-26 후속 완료: iOS·Steam 출시 도우미 탭·플랫폼별 기록·저장·다음 할 일을 연결했다. 전체 722 통과/17 환경 skip, 독립 리뷰 수정 후 관련 27/27·타입·빌드·실제 Electron 검증 완료. 실계정·타 OS·장기 수용의 기존 완수율은 유지한다. [검증](../docs/verification.md#2026-10-26-iossteam-출시-도우미-확장).
 
 2026-10-26: Google Play 출시 도우미(프로젝트별 체크리스트·테스트 요건·심사 기록·신청 초안) 구현과 검증 완료. 전체 717 통과/17 환경 skip, 타입·빌드·Electron 검증. 기존 장기 수용 완수율 유지. [검증](../docs/verification.md#2026-10-26-google-play-출시-도우미).

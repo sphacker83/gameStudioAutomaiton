@@ -63,7 +63,7 @@ export function ConnectionsView({ state, refresh }: { state: AppState; refresh: 
   const [oauthApps, setOauthApps] = useState<OAuthAppConfiguration>([]);
   const [configError, setConfigError] = useState<string | null>(null);
   async function loadOAuthApps() {
-    if (api.isDemo()) return;
+
     const result = await api.oauthConfiguration();
     if (result.ok) { setOauthApps(result.data); setConfigError(null); }
     else setConfigError(result.error.message);
@@ -71,7 +71,6 @@ export function ConnectionsView({ state, refresh }: { state: AppState; refresh: 
   const connectionAppsKey = state.connections.map(connection => `${connection.id}:${connection.updatedAt}`).join('|');
   useEffect(() => { void loadOAuthApps(); }, [connectionAppsKey]);
   const googleApp = oauthApps.find(app => app.provider === 'google-play' && app.available);
-
   const actionNeeded = state.connections.filter((c) => needsReconnect(c.status));
 
   return (
@@ -82,10 +81,10 @@ export function ConnectionsView({ state, refresh }: { state: AppState; refresh: 
           <div>
             <div className="section-title"><KeyRound size={16} /> Google OAuth 앱</div>
             <p className="small muted" style={{ margin: '6px 0 0' }}>
-              {api.isDemo() ? '실제 모드에서 등록할 수 있습니다.' : googleApp ? `사용 가능 · ${googleApp.source}` : '최초 한 번 등록 · Google Play·Google Ads·AdMob 공통 사용'}
+              {googleApp ? `사용 가능 · ${googleApp.source}` : '최초 한 번 등록 · Google Play·Google Ads·AdMob 공통 사용'}
             </p>
           </div>
-          <button className="btn" onClick={() => setGoogleAppOpen(true)} disabled={api.isDemo() || !state.vault.available}>
+          <button className="btn" onClick={() => setGoogleAppOpen(true)} disabled={!state.vault.available}>
             <KeyRound size={15} /> {googleApp ? 'Google 앱 설정' : 'Google OAuth 앱 등록'}
           </button>
         </div>
@@ -143,18 +142,7 @@ export function ConnectionsView({ state, refresh }: { state: AppState; refresh: 
 
 function VaultBanner({ state }: { state: AppState }) {
   const { vault } = state;
-  if (api.isDemo()) {
-    return (
-      <div className="notice notice--info" role="status">
-        <Lock size={17} style={{ flex: 'none' }} />
-        <div className="notice__body">
-          <div className="notice__title">데모 모드 · 시드된 연결</div>
-          아래 연결은 데모 시드 계정입니다. 자격 증명 입력 없이 상태 검사·복구·작업을 실행할 수 있으며 실제 공급자에
-          전송되지 않습니다. 실제 계정은 머리말의 모드 전환으로 실제 모드에서 같은 화면으로 연결합니다.
-        </div>
-      </div>
-    );
-  }
+
   if (vault.available) {
     return (
       <div className="notice notice--info" role="status" style={{ borderColor: 'var(--border)' }}>
@@ -181,13 +169,9 @@ function ConnectionCard({ conn, state, refresh }: { conn: Connection; state: App
   const [reconnecting, setReconnecting] = useState(false);
   const [repairOpen, setRepairOpen] = useState(false);
   const cap = state.capabilities.find((c) => c.provider === conn.provider);
-
-  // 데모: 자격 증명 재입력/OAuth 없이 상태 검사로 복구한다(루트 데모 어댑터가 전이).
-  const demo = api.isDemo();
-  const showReconnect = !demo && isOAuthProvider(conn.provider) && needsReconnect(conn.status);
+  const showReconnect = isOAuthProvider(conn.provider) && needsReconnect(conn.status);
   const invalidAdsAccount = conn.provider === 'google-ads' && !/^\d+$/.test(conn.accountId.replace(/-/g, ''));
-  const showRepair = !demo && !!cap && (invalidAdsAccount || needsReconnect(conn.status) && cap.fields.length > 0);
-  const showDemoRecover = demo && needsReconnect(conn.status);
+  const showRepair = !!cap && (invalidAdsAccount || needsReconnect(conn.status) && cap.fields.length > 0);
 
   return (
     <section className="card">
@@ -230,16 +214,7 @@ function ConnectionCard({ conn, state, refresh }: { conn: Connection; state: App
           <button className="btn btn--sm" onClick={() => void check.run(() => api.checkConnection(conn.id))} disabled={check.pending}>
             {check.pending ? <Spinner /> : <RefreshCcw size={13} />} 상태 검사
           </button>
-          {showDemoRecover && (
-            <button
-              className="btn btn--sm btn--primary"
-              onClick={() => void check.run(() => api.checkConnection(conn.id))}
-              disabled={check.pending}
-              title="데모 연결을 다시 검사해 복구합니다(자격 증명 불필요)."
-            >
-              {check.pending ? <Spinner /> : <RotateCw size={13} />} 복구 시도
-            </button>
-          )}
+
           {showReconnect && (
             <button className="btn btn--sm btn--primary" onClick={() => setReconnecting(true)}>
               <RotateCw size={13} /> 다시 연결
@@ -357,7 +332,6 @@ function ReconnectModal({
   const start = useAction<{ connectionId: string; authorizationUrl: string }>();
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [openError, setOpenError] = useState<string | null>(null);
-
   const social = isSocialOAuthProvider(conn.provider);
   async function begin() {
     setOpenError(null);
@@ -489,10 +463,8 @@ function AddConnectionModal({ state, refresh, onClose, oauthApps, reloadOAuthApp
   const [credentials, setCredentials] = useState<Record<string, string>>({});
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [openError, setOpenError] = useState<string | null>(null);
-
   const add = useAction<Connection>(refresh);
   const oauth = useAction<{ connectionId: string; authorizationUrl: string }>();
-
   const providerOptions = useMemo(() => {
     const seen = new Set<Provider>();
     return state.capabilities.filter((c) => (seen.has(c.provider) ? false : (seen.add(c.provider), true)));
@@ -506,12 +478,10 @@ function AddConnectionModal({ state, refresh, onClose, oauthApps, reloadOAuthApp
     return all.filter((f) => (seen.has(f.key) ? false : (seen.add(f.key), true)));
   }, [state.capabilities, provider]);
 
-  // 데모: 자격 증명 필드 없이 최소 입력(공급자·이름·식별자)만 받는다. 루트가 합성 계정을 만든다.
-  const demo = api.isDemo();
   const cap = useMemo(() => state.capabilities.find((c) => c.provider === provider) ?? null, [state.capabilities, provider]);
   const social = provider ? isSocialOAuthProvider(provider) : false;
   const oauthCapable = provider ? isOAuthProvider(provider) : false;
-  const effectiveMode: Mode = demo ? 'manual' : oauthCapable ? mode : 'manual';
+  const effectiveMode: Mode = oauthCapable ? mode : 'manual';
   // 소셜(X/Threads)은 계정 ID를 자동 검색으로 채울 수 있어 비워둘 수 있다(서버가 정규화).
   const accountRequired = !social && !(effectiveMode === 'oauth' && ['admob', 'google-play'].includes(provider));
   const savedApp = oauthApps.find(app => app.provider === provider && app.available);
@@ -552,10 +522,9 @@ function AddConnectionModal({ state, refresh, onClose, oauthApps, reloadOAuthApp
   const manualMissing =
     !label.trim() ||
     (accountRequired && !accountId.trim()) ||
-    (!demo && fields.some((f) => f.required && !(credentials[f.key] ?? '').trim()));
+    (fields.some((f) => f.required && !(credentials[f.key] ?? '').trim()));
 
-  // 데모는 보관함/자격 증명 요건을 적용하지 않는다.
-  const canSubmit = (demo || state.vault.available) && provider && (effectiveMode === 'oauth' ? !oauthMissing : !manualMissing);
+  const canSubmit = (state.vault.available) && provider && (effectiveMode === 'oauth' ? !oauthMissing : !manualMissing);
 
   async function submitManual() {
     if (!provider || !canSubmit) return;
@@ -634,16 +603,9 @@ function AddConnectionModal({ state, refresh, onClose, oauthApps, reloadOAuthApp
       }
     >
       <div className="stack" style={{ gap: 14 }}>
-        {!demo && !state.vault.available && (
+        {!state.vault.available && (
           <Notice tone="error" title="보관함 준비 필요">
             안전한 OS 보관함을 사용할 수 없어 자격 증명을 저장할 수 없습니다. 환경 설정에서 보관함 상태를 확인하세요.
-          </Notice>
-        )}
-
-        {demo && (
-          <Notice tone="info" title="데모 연결">
-            데모에서는 자격 증명을 입력하지 않습니다. 공급자·이름·식별자만 지정하면 루트가 합성 계정을 만들어 실제와
-            동일한 연결 상태·작업 흐름을 보여줍니다. 실제 공급자에는 연결하지 않습니다.
           </Notice>
         )}
 
@@ -662,7 +624,7 @@ function AddConnectionModal({ state, refresh, onClose, oauthApps, reloadOAuthApp
 
             {cap && (
               <>
-                {oauthCapable && !demo && (
+                {oauthCapable && (
                   <div className="pill-group" role="tablist" aria-label="연결 방식">
                     <button role="tab" aria-pressed={mode === 'oauth'} onClick={() => setMode('oauth')}>
                       {social ? '브라우저로 연결' : 'Google 계정으로 연결'}
@@ -746,10 +708,6 @@ function AddConnectionModal({ state, refresh, onClose, oauthApps, reloadOAuthApp
                       </span>
                     </Notice>
                   </div>
-                ) : demo ? (
-                  <p className="small muted" style={{ margin: 0 }}>
-                    데모 연결은 추가 자격 증명 입력이 필요 없습니다. 아래 “연결”을 누르면 합성 계정이 생성됩니다.
-                  </p>
                 ) : (
                   <div>
                     <div className="section-title">자격 증명</div>

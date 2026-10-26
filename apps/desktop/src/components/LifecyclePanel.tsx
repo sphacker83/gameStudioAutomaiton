@@ -1,7 +1,7 @@
 // 앱/제어 서비스 수명주기 패널.
 // - 마지막 창을 닫거나 앱을 종료하면 제어 서비스와 실행 중인 작업도 함께 종료된다.
 // - 중지/재시작은 명시적 조치이며 IPC로 동작하므로 HTTP(/state)가 끊겨도 사용할 수 있다.
-// - 데모에서는 변경 버튼을 비활성화한다. 앱 종료 시 정리는 모드와 무관하게 main이 수행한다.
+
 // - 브라우저(비 Electron)에서는 데스크톱 전용 제어임을 안내하고 조작을 노출하지 않는다.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { CircleStop, Power, RefreshCw, ServerCog, ShieldAlert, Sunrise } from 'lucide-react';
@@ -13,7 +13,6 @@ import { formatRelative } from '../format';
 type Phase = 'loading' | 'ready' | 'browser' | 'error';
 
 export function LifecyclePanel() {
-  const demo = api.isDemo();
   const electron = api.isElectron;
   const [status, setStatus] = useState<LifecycleStatus | null>(null);
   const [phase, setPhase] = useState<Phase>('loading');
@@ -21,7 +20,6 @@ export function LifecyclePanel() {
   const [message, setMessage] = useState<{ tone: 'ok' | 'warn' | 'error'; text: string } | null>(null);
   const [stopped, setStopped] = useState(false);
   const mounted = useRef(true);
-
   const load = useCallback(async () => {
     const res = await api.lifecycleStatus();
     if (!mounted.current) return;
@@ -136,12 +134,6 @@ export function LifecyclePanel() {
           앱을 종료하거나 마지막 창을 닫으면 실행 중인 AI와 작업, 제어 서비스가 함께 종료됩니다.
         </p>
 
-        {demo && (
-          <Notice tone="info" title="데모 모드">
-            데모에서는 아래 상태를 읽기 전용으로 보여 줍니다. 앱 종료 시에는 모든 모드의 실행 중인 작업을 함께 정리합니다.
-          </Notice>
-        )}
-
         {phase === 'loading' ? (
           <div className="row" style={{ gap: 8 }}>
             <Spinner /> 상태를 확인하는 중…
@@ -159,23 +151,23 @@ export function LifecyclePanel() {
             <button
               className="btn btn--sm"
               onClick={() => void doStop()}
-              disabled={demo || busy !== null || (status ? !status.controller.running : false)}
-              title={demo ? '데모에서는 실제 제어 서비스를 중지하지 않습니다.' : '자동화 중지(명시적)'}
+              disabled={busy !== null || (status ? !status.controller.running : false)}
+              title="자동화 중지(명시적)"
             >
               {busy === 'stop' ? <Spinner /> : <CircleStop size={14} />} 자동화 중지
             </button>
             <button
               className="btn btn--sm btn--primary"
               onClick={() => void doRestart()}
-              disabled={demo || busy !== null}
-              title={demo ? '데모에서는 실제 제어 서비스를 다시 시작하지 않습니다.' : '제어 서비스 다시 시작(IPC)'}
+              disabled={busy !== null}
+              title="제어 서비스 다시 시작(IPC)"
             >
               {busy === 'restart' ? <Spinner /> : <Power size={14} />} 다시 시작
             </button>
           </div>
         )}
 
-        {stopped && electron && !demo && (
+        {stopped && electron && (
           <Notice
             tone="warn"
             title="제어 서비스가 중지되었습니다"
@@ -201,7 +193,7 @@ export function LifecyclePanel() {
           <AutostartRow
             autostart={status.autostart}
             installable={status.autostartInstallable}
-            demo={demo}
+
             busy={busy === 'autostart'}
             disabled={busy !== null}
             onToggle={toggleAutostart}
@@ -229,14 +221,12 @@ function ControllerStatusRow({ status, stopped }: { status: LifecycleStatus; sto
 function AutostartRow({
   autostart,
   installable,
-  demo,
   busy,
   disabled,
   onToggle,
 }: {
   autostart: AutostartStatusView;
   installable: boolean;
-  demo: boolean;
   busy: boolean;
   disabled: boolean;
   onToggle: (enable: boolean) => void;
@@ -263,8 +253,7 @@ function AutostartRow({
           <button
             className="btn btn--sm"
             onClick={() => onToggle(false)}
-            disabled={demo || disabled}
-            title={demo ? '데모에서는 실제 자동 시작을 바꾸지 않습니다.' : undefined}
+            disabled={disabled}
           >
             {busy ? <Spinner /> : null} 자동 시작 끄기
           </button>
@@ -272,8 +261,7 @@ function AutostartRow({
           <button
             className="btn btn--sm"
             onClick={() => onToggle(true)}
-            disabled={demo || disabled || !installable}
-            title={demo ? '데모에서는 실제 자동 시작을 바꾸지 않습니다.' : undefined}
+            disabled={disabled || !installable}
           >
             {busy ? <Spinner /> : null} 자동 시작 켜기
           </button>

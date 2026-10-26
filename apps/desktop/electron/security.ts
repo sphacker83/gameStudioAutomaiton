@@ -310,23 +310,12 @@ export function portableBackupImportPath(mode: PortableBackupMode): string {
 
 // ---------------------------------------------------------------------------
 // main 소유 실행 모드에 결속된 요청 네임스페이스 판정.
-// 실행 모드(demo/live)는 main이 소유·영속하며 renderer 문자열로 바뀌지 않는다. 여기서는 renderer가
-// 보낸 논리 경로의 네임스페이스가 그 실행 모드와 일치하는지만 판정한다: 데모 모드는 반드시 `/demo/…`,
-// 실제 모드는 반드시 비-데모 경로여야 한다. 손상된 renderer가 데모 세션에서 실제 경로를(또는 그 반대)
-// 밀어 넣어도 main이 여기서 거부한다(fail-closed). 실제 권한 변경은 setMode 확인을 통해서만 이뤄진다.
+// 요청 경로가 지정한 저장공간과 일치하는지 판정한다. 데스크톱은 항상 live를 전달하므로
+// renderer가 직접 `/demo` 경로를 보내도 main에서 거부한다. 내부 격리 검증의 demo 판정도 유지한다.
 export function requestNamespaceMatches(mode: PortableBackupMode, path: string): boolean {
   if (typeof path !== 'string') return false;
   const isDemoPath = path === '/demo' || path.startsWith('/demo/');
   return mode === 'demo' ? isDemoPath : !isDemoPath;
-}
-
-// 로컬 데스크톱 실행 모드 선호를 저장하는 파일 형태. renderer localStorage 밖(사용자 데이터 디렉터리)에
-// 0600으로 보관한다. 'live'만 실제, 그 외/누락/손상은 데모(안전 기본값)로 정규화한다.
-export function normalizeStoredMode(raw: unknown): PortableBackupMode {
-  if (raw && typeof raw === 'object' && 'mode' in raw) {
-    return normalizePortableMode((raw as { mode?: unknown }).mode);
-  }
-  return normalizePortableMode(raw);
 }
 
 // ---------------------------------------------------------------------------

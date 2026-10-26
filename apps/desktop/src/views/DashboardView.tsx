@@ -26,7 +26,6 @@ export function DashboardView({
   refresh: () => Promise<void>;
   goTo: (v: ViewKey) => void;
 }) {
-  const demo = state.runtime.mode === 'demo';
 
   const activeRuns = state.runs.filter(
     (r) => r.status === 'queued' || r.status === 'running' || r.status === 'retry_wait' || r.status === 'waiting_external',
@@ -198,12 +197,6 @@ export function DashboardView({
         </div>
       </div>
 
-      {demo && (
-        <p className="small faint" style={{ margin: 0 }}>
-          데모 미리보기입니다. 표시된 연결·프로젝트·지표는 시드 데이터이며 실제 공급자에 전송되지 않습니다. 머리말의
-          모드 전환으로 실제 계정 모드로 바꿀 수 있습니다.
-        </p>
-      )}
     </div>
   );
 }

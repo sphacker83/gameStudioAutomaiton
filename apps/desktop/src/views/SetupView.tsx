@@ -1,7 +1,7 @@
 import { ProviderPicker } from '../components/ProviderPicker';
 import { useAgentScope } from '../components/AgentActions';
 // 운영 준비 화면: 엔진·SDK 설치/연결, 프로젝트별 준비 점검, 스토어 앱 매핑, 광고/결제 연동,
-// 앱·제어 서비스 수명주기를 한 화면에서 다룬다. 데모/실제 모두 같은 논리 API를 쓴다(모드는 불변 클라이언트).
+
 // 점검 항목의 조치 링크는 기존 화면(프로젝트·계정·키·러너)으로 이동한다.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -80,7 +80,6 @@ export function SetupView({
   const [phase, setPhase] = useState<'loading' | 'ready' | 'error'>('loading');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const mounted = useRef(true);
-
   const load = useCallback(async () => {
     const res = await api.getSetup();
     if (!mounted.current) return;
@@ -127,7 +126,7 @@ export function SetupView({
     <div className="stack" style={{ gap: 16 }}>
       <Card>
         <div className="row row--between" style={{ flexWrap: 'wrap', gap: 10 }}>
-          <div className="row" style={{ gap: 10 }}><Rocket size={17} aria-hidden /><strong>운영 준비</strong><Badge tone="neutral">{setup.mode === 'demo' ? '데모' : '실제'}</Badge></div>
+          <div className="row" style={{ gap: 10 }}><Rocket size={17} aria-hidden /><strong>운영 준비</strong></div>
           <div className="row" style={{ gap: 12, flexWrap: 'wrap' }}>
             <span className="small">프로젝트 준비 <strong>{readyProjects}/{setup.projects.length}</strong></span>
             <span title={setup.isolation.reason}><Badge tone={setup.isolation.available ? 'ok' : 'warn'}>빌드 환경 {setup.isolation.available ? '준비됨' : '설정 필요'}</Badge></span>
@@ -592,7 +591,7 @@ function StoreAppSection({
       </h3>
       <p className="muted" style={{ margin: 0 }}>
         프로젝트를 스토어의 실제 앱과 연결합니다. 저장하면 해당 계정이 이 프로젝트의 정책에 부여됩니다. 저장만으로
-        확인됨이 되지는 않으며, 연결 확인은 실제 읽기 전용 조회(데모는 시뮬레이션)로만 표시됩니다.
+        확인됨이 되지는 않으며, 연결 확인은 실제 읽기 전용 조회로만 표시됩니다.
       </p>
       <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
         <Field label="스토어" htmlFor="store-provider">

@@ -21,7 +21,7 @@ const isStaged = (f: GitFile) => !!f.index.trim() && f.index !== "?";
 const isUnstaged = (f: GitFile) => !!f.working.trim();
 
 // Git 상태는 헤더·이슈/PR 탭도 읽으므로 탭 밖에서 유지한다. 커밋 메시지·새 브랜치 입력은 탭을 오가도 남는다.
-export function useGitWorkspace({ projectId, projectRef }: DevelopmentRequests, demo: boolean) {
+export function useGitWorkspace({ projectId, projectRef }: DevelopmentRequests) {
   const [git, setGit] = useState<GitState | null>(null);
   const [gitError, setGitError] = useState("");
   const [diff, setDiff] = useState<{ title: string; text: string } | null>(null);
@@ -29,9 +29,8 @@ export function useGitWorkspace({ projectId, projectRef }: DevelopmentRequests, 
   const [newBranch, setNewBranch] = useState("");
   const [repos, setRepos] = useState<GithubRepository[] | null>(null);
   const [selectedRepo, setSelectedRepo] = useState("");
-
   const load = useCallback(async () => {
-    if (!projectId || demo) return;
+    if (!projectId) return;
     const r = await api.studio("git-state", { projectId });
     if (projectRef.current !== projectId) return;
     if (r.ok) {
@@ -41,7 +40,7 @@ export function useGitWorkspace({ projectId, projectRef }: DevelopmentRequests, 
       setGit(null);
       setGitError(r.error.message);
     }
-  }, [projectId, projectRef, demo]);
+  }, [projectId, projectRef]);
   // 프로젝트가 바뀌면 이전 프로젝트의 Git 상태·diff·저장소 선택이 새 프로젝트에 쓰이지 않도록 비운다.
   useEffect(() => {
     setGit(null);
@@ -78,13 +77,11 @@ export function useGitWorkspace({ projectId, projectRef }: DevelopmentRequests, 
 export function GitTab({
   workspace,
   requests,
-  demo,
   projectName,
   refresh,
 }: {
   workspace: GitWorkspace;
   requests: DevelopmentRequests;
-  demo: boolean;
   projectName?: string;
   refresh: () => Promise<void>;
 }) {
@@ -96,15 +93,13 @@ export function GitTab({
         title="Git 상태와 변경사항"
         icon={GitBranch}
         actions={
-          <button className="btn btn--sm" disabled={demo || !!pending} onClick={() => void workspace.load()}>
+          <button className="btn btn--sm" disabled={!!pending} onClick={() => void workspace.load()}>
             <RefreshCw size={13} aria-hidden />
             새로고침
           </button>
         }
       >
-        {demo ? (
-          <p className="muted">실제 운영 모드에서 Git 상태를 조회합니다.</p>
-        ) : gitError ? (
+        {gitError ? (
           <Notice
             tone="warn"
             title="Git 저장소를 읽지 못했습니다"
@@ -165,7 +160,7 @@ export function GitTab({
         <div className="row">
           <button
             className="btn"
-            disabled={demo || !!pending}
+            disabled={!!pending}
             onClick={async () => {
               const r = await act("repositories", {}, false);
               if (r) {

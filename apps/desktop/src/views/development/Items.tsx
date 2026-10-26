@@ -60,7 +60,6 @@ export function ItemsTab({
   requests,
   tasks,
   git,
-  demo,
   onGitTab,
   onOpenTask,
   onImport,
@@ -70,7 +69,6 @@ export function ItemsTab({
   requests: DevelopmentRequests;
   tasks: DevelopmentTask[];
   git: GitState | null;
-  demo: boolean;
   onGitTab: () => void;
   onOpenTask: (id: string) => void;
   onImport: (number: number, kind: ItemKind) => Promise<void>;
@@ -80,7 +78,7 @@ export function ItemsTab({
   const listVisible = items.visible(kind);
   return (
     <Card title={kind === "pr" ? "프로젝트 PR" : "프로젝트 이슈"} icon={kind === "pr" ? GitPullRequest : ListTodo}>
-      {!demo && git && !git.repository && (
+      {git && !git.repository && (
         <Notice
           tone="warn"
           title="GitHub 저장소 연결이 필요합니다"
@@ -115,7 +113,7 @@ export function ItemsTab({
         />
         <button
           className="btn btn--primary"
-          disabled={!!pending || demo || !git?.repository}
+          disabled={!!pending || !git?.repository}
           onClick={() => void items.load(kind)}
         >
           {pending === "items" ? <Spinner /> : <RefreshCw size={13} aria-hidden />}
@@ -166,7 +164,7 @@ export function ItemsTab({
                     ) : (
                       <button
                         className="btn btn--sm btn--primary"
-                        disabled={!!pending || demo}
+                        disabled={!!pending}
                         onClick={() => void onImport(item.number, listVisible.kind)}
                       >
                         {pending === "import" ? <Spinner /> : <Play size={12} aria-hidden />}

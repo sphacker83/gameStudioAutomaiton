@@ -88,7 +88,7 @@ export function CommunityView({
     <div className="stack">
       <div className="row row--between" style={{ flexWrap: 'wrap', gap: 10 }}>
         <p className="muted small" style={{ margin: 0, maxWidth: 620 }}>
-          {api.isDemo() ? '데모 게시물·답글은 데모 공간에 저장됩니다. ' : '게시물·답글은 연결된 계정에 반영됩니다. '}
+          게시물·답글은 연결된 계정에 반영됩니다.
           예약 게시·출시 공지·자동 답글은 저장한 프로젝트 정책의 범위 안에서 실행합니다.
         </p>
         <Field label="프로젝트" htmlFor="community-project">
@@ -141,7 +141,6 @@ function ChannelCard({
   const [compose, setCompose] = useState(false);
   const [replyTo, setReplyTo] = useState<ExternalResource | null>(null);
   const [extraForm, setExtraForm] = useState<string | null>(null);
-
   const resources = state.resources.filter(
     (r) => r.connectionId === conn.id && (!projectId || r.projectId === projectId) && r.status !== 'deleted' && ['post', 'reply', 'mention', 'news'].includes(r.kind),
   );
@@ -312,9 +311,7 @@ function ComposeModal({
         ) : (
           <>
             <p className="small muted" style={{ margin: 0 }}>
-              {api.isDemo()
-                ? `데모 모드: ${conn.label} 데모 채널에 기록되며 실제 공급자에는 게시되지 않습니다.`
-                : `${conn.label} 계정에 바로 게시됩니다. 게시 후에는 이 앱에서 되돌릴 수 없습니다.`}
+              {`${conn.label} 계정에 바로 게시됩니다. 게시 후에는 이 앱에서 되돌릴 수 없습니다.`}
             </p>
             <Field label="내용" required hint={`${text.length}자`}>
               <textarea className="textarea" value={text} onChange={(e) => setText(e.target.value)} rows={5} placeholder="게시할 내용을 입력하세요" />
