@@ -227,3 +227,25 @@ Steam 공지 쓰기·신규 앱의 필수 Console 단계, macOS/Windows 내장 �
 - 리뷰 회귀: 종료 직후 취소가 자동 반영을 재개하지 않음, fork PR 반영 제한, CRLF/대형 에셋의 기존 blob 보존, 변경 필터 실행 차단, 정확한 승인 SHA 배포, 보호 URL과 성공 구분, 복원 잠금 재설정, 루트 소스 공개 거부, 실시간 인증값 마스킹, OpenCode 전역 상태 접근 거부, scoped MCP proxy·Keychain/직접 TCP/Unix socket 차단.
 
 증거 로그·실기 스크립트·화면 캡처는 `tmp/development-workflow/`에 보관했다. 공개용 인증 자료와 테스트용 비밀값 이외의 토큰은 로그에 기록하지 않았다. Linux 이번 변경 실기, 실계정 외부 반영, 서명·공증은 별도 수용 항목으로 유지한다. 사용법은 [AI·개발·배포 안내](ai-operations.md)를 따른다.
+
+
+## 2026-10-26 Google Play 출시 도우미
+
+- 구현: 스토어 배포 화면의 프로젝트별 10개 준비 항목·8단계 출시 안내·테스트 비교, 의무 적용/미확인/비대상, Console 인원·연속 일수·확인일·신청 가능 확인, 액세스와 정식 심사 상태, 답변 8개와 복사·메모·다음 할 일.
+- 저장: 인증된 `PUT /projects/:id/google-play-release`와 Electron 허용 경로, 기존 프로젝트 문서에 영속화. revision 충돌 거부·입력 검증·프로젝트/데모/실제 격리를 확인했다. 외부 요청이나 실행 작업을 생성하지 않는다.
+- 정책은 [Google 테스트 요건](https://support.google.com/googleplay/android-developer/answer/14151465)과 [트랙 안내](https://support.google.com/googleplay/android-developer/answer/9845334)를 2026-10-26 확인했다. 12명·연속 14일, 공개 테스트 접근, 두 심사의 구분을 반영했다. 대상 API 숫자는 고정하지 않는다.
+- 행동 검사: `tests/google-play-release.test.ts` 5/5 통과. 11/12명·13/14일 경계, 확인일/Console 확인 필요, 날짜 경과 자동 승격 금지, 의무 비대상, 심사/공개 분리, 초안 미작성 표시, 인증·형식·누락 프로젝트·낡은 revision·재시작·모드 격리를 확인했다.
+- 전체 검사: `npm test` 734개 중 717 통과·실패 0·환경 skip 17. `npm run typecheck`(구조 검사 포함)·`npm run build`·`git diff --check` 통과. 빌드의 기존 대형 번들 경고는 남아 있다.
+- 실제 macOS Electron: 별도 데이터 폴더의 데모에서 입력·저장·취소·프로젝트 전환·경계 조건·신청 가능 확인 해제·심사 단계·8개 답변·미리보기/클립보드·재로드·조회 중 편집 유지·미래 확인일 오류·10/10 완료 상태를 검증했다. 1360px/1000px 창에서 시각 배치와 가로 넘침 없음을 확인했다.
+- 자체 리뷰와 UI 실패 경로 확인 중 외부 브라우저 실행 예외의 미표시를 발견해 처리했다. 수정 후 같은 실패 경로에서 오류 표시와 미처리 예외 없음, 타입·빌드를 확인했다. 공식 링크 4개의 목적지는 실제 shell 호출 경계에서 확인했으며 검증을 위해 외부 브라우저를 열지는 않았다.
+- 실행 근거: `tmp/google-play-release/{focused,tests,typecheck,build,diff-check}.log`, `ui-qa.txt`, `desktop.png`, `compact.png`, `completed.png`. 실제 계정 신청·게시·배포는 수행하지 않았다. Console 인원·일수·심사는 자동 동기화가 아닌 수동 확인 기록이다.
+
+## 2026-10-26 iOS·Steam 출시 도우미 확장
+
+- 스토어 배포 화면에 Google Play / iOS·App Store / Steam 탭을 연결했다. iOS는 TestFlight·App Review·공개 방식/실제 공개, Steam은 스토어/빌드 심사·Coming Soon·등록비 대기·실제 공개를 구분한다. 각 10개 체크·출시 순서·다음 할 일·날짜·메모/복사·공식 안내와 프로젝트별 저장을 제공한다.
+- 새 `PUT /api/projects/:id/release-guide/{app-store|steam}` 및 데모 경로는 인증·입력·revision을 검증한다. 기존 Google Play와 다른 플랫폼 기록 보존, 프로젝트/실제·데모 격리, 재시작 유지, 외부 호출·실행 생성 0건을 API 검사로 확인했다. 날짜 경과나 TestFlight 완료로 정식 승인/공개를 추정하지 않는다.
+- 전체 `npm test`: 739개 중 **722 통과·실패 0·환경 skip 17**. 최초 집중 검사에서 발견한 boolean 타입 좁히기와 정적 API 경로 검사의 공급자 fixture를 함께 수정했다. 최종 `npm run typecheck`·`npm run build` 통과. 기존 Vite 500 kB 번들 경고는 유지된다.
+- 사용자 `$ai-team` 요청에 따라 구현자(root)와 분리된 Codex `gpt-6-sol` / `high` 세션이 코드·diff·검증 근거를 독립 리뷰했다. Steam에서 스토어 승인 후 Coming Soon 시작을 빌드 승인까지 미루던 안내를 수정했다. Coming Soon 대기 중 빌드 준비·심사를 병행하도록 회귀 케이스를 추가했고 관련 Google Play/새 도우미/Electron 보안 **27/27** 통과. 리뷰가 지적한 오래된 작업 상태 문서도 동기화했다. 미해결 필수 지적은 없다.
+- 실제 macOS Electron의 별도 데이터·데모에서 iOS 테스트/정식 심사/공개·공개 방식 3종, Steam 심사/수정 요청·기간/비대상·공개 조건 차단, 각 10/10, 날짜·메모/복사·저장/취소를 확인했다. 플랫폼/프로젝트 전환·재로드 후 기록 보존, 편집 중 전환 잠금·새로고침 유지, 미래 날짜/공개 조건 변경 실패와 복구, 키보드 탭 이동·빈 프로젝트 안내를 확인했다. 1360px 및 1000px viewport의 시각 배치·가로 넘침 없음을 확인했다.
+- 실행 근거: `tmp/store-release-guide/{tests,review-regression,typecheck,build,diff-check}.log`, `ui-qa.txt`, `ios-desktop.png`, `ios-compact.png`, `steam-desktop.png`, `steam-compact.png`, `steam-compact-form.png`. 공식 URL 허용·목적지와 revision 충돌·프로세스 재시작은 API/보안 검사 근거다. 새 확장 UI에서 외부 브라우저나 실제 스토어를 호출하지 않았다.
+- 범위: 수동 확인 기록을 제공하는 출시 도우미 구현이다. 실계정 심사 제출·게시·배포, 새 설치 패키지, Windows/Linux GUI 수용은 수행하지 않았다. Apple·Steam 공식 정책 링크와 사용법은 [스토어 연동 안내](store-integration.md#iossteam-출시-도우미)를 따른다.

@@ -1,3 +1,5 @@
+import type { GuidedStore, StoreReleaseRecord } from '../../../packages/domain/store-release';
+import type { GooglePlayRelease } from '../../../packages/domain/google-play-release';
 // API 클라이언트. 두 실행 환경에서 같은 계약을 제공한다.
 // - Electron: window.appOps.request(...)가 main을 거쳐 bearer를 붙여 호출한다.
 // - 브라우저 개발 모드: fetch('/api' + path). Vite 프록시가 인증을 주입한다(코디네이터 구현).
@@ -110,6 +112,12 @@ function readStoredMode(): RuntimeMode {
 // 전체 새로고침(location.reload)하여 새 인스턴스를 만드므로, 이전 모드의 stale promise가 새 트리로
 // 들어가거나 다른 모드에 쓰기를 보내는 일이 원천적으로 불가능하다.
 export class ApiClient {
+  saveStoreReleaseGuide(id: string, provider: GuidedStore, input: StoreReleaseRecord) {
+    return this.request<Project>('PUT', `/projects/${encodeURIComponent(id)}/release-guide/${provider}`, input);
+  }
+  saveGooglePlayRelease(id: string, input: GooglePlayRelease) {
+    return this.request<Project>('PUT', `/projects/${encodeURIComponent(id)}/google-play-release`, input);
+  }
   studio<A extends DevelopmentAction>(action: A, input?: Record<string, unknown>): Promise<ApiResult<DevelopmentResponses[A]>>;
   studio<T = unknown>(action: string, input?: Record<string, unknown>): Promise<ApiResult<T>>;
   studio(action: string, input: Record<string, unknown> = {}) { return this.request<unknown>('POST', '/development', { ...input, action }); }

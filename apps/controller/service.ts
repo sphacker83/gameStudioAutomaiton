@@ -1,3 +1,6 @@
+import { saveStoreReleaseGuide } from './store-release.js';
+import type { GuidedStore } from '../../packages/domain/store-release.js';
+import { saveGooglePlayRelease } from './google-play-release.js';
 import { DevelopmentStudio } from './development.js';
 import { GOOGLE_OAUTH_APP_ID, OAUTH_PROVIDERS, oauthCredentials, resolveOAuthClient } from './oauth-clients.js';
 import { createHash, randomUUID } from 'node:crypto';
@@ -199,6 +202,12 @@ export class AppService {
     const connector = this.connectors.find(item => item.capability.provider === provider);
     if (!connector) throw new AppError('PROVIDER_UNAVAILABLE', '아직 실행 가능한 연결 모듈이 없습니다.');
     return connector;
+  }
+  saveStoreReleaseGuide(id: string, provider: GuidedStore, input: unknown): Project {
+    return saveStoreReleaseGuide(this.store, this.project(id), provider, input);
+  }
+  saveGooglePlayRelease(id: string, input: unknown): Project {
+    return saveGooglePlayRelease(this.store, this.project(id), input);
   }
   project(id: string): Project {
     const project = this.store.get<Project>('project', id);

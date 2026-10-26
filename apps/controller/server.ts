@@ -196,6 +196,8 @@ export async function startController(options: ControllerOptions = {}): Promise<
         else if(method==='POST'&&action==='rollback')data=await activeService.integrations.rollback(id,body);
         else throw new AppError('NOT_FOUND','지원하지 않는 SDK 요청입니다.',404);
       }
+      else if (method === 'PUT' && /^\/api\/projects\/[a-zA-Z0-9-]{1,100}\/release-guide\/(app-store|steam)$/.test(path)) data = activeService.saveStoreReleaseGuide(path.split('/')[3]!, path.split('/')[5]! as 'app-store' | 'steam', body);
+      else if (method === 'PUT' && /^\/api\/projects\/[a-zA-Z0-9-]{1,100}\/google-play-release$/.test(path)) data = activeService.saveGooglePlayRelease(path.split('/')[3]!,body);
       else if (method === 'PUT' && /^\/api\/projects\/[a-zA-Z0-9-]{1,100}\/store-app$/.test(path)) data = activeService.saveStoreApp(path.split('/')[3]!,body);
       else if (method === 'POST' && /^\/api\/projects\/[a-zA-Z0-9-]{1,100}\/store-app\/check$/.test(path)) data = await activeService.verifyStoreApp(path.split('/')[3]!,body);
       else if (method === 'PUT' && path === '/api/setup/tools') data = await activeService.preparation.saveTools(body);

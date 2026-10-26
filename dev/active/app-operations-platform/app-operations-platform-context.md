@@ -1,6 +1,6 @@
 # 앱 운영 자동화 작업 맥락
 
-Last Updated: 2026-09-24
+Last Updated: 2026-10-26
 
 2026-09-24 후속(잔여 코드 공백): 사용자 요청("나머지 다 구현해")으로 실계정 없이 구현 가능한 공백을 채웠다. 스토어 상품 활성화·구독·심사 제출·앱 프리뷰·정산, X 미디어, Steam 정정, Google Ads 이미지·귀속 fact, AppLovin 소재·cohort 수익, 미출시 광고 차단·성과 규칙, 장비 이전 차단, macOS Seatbelt 빌드 격리, 미디어 등록 확장, Electron API 허용 목록 회귀 검사가 들어갔다. 성장 운영은 [ai-growth-operations](../ai-growth-operations/ai-growth-operations-context.md)에 기록했다. 모든 쓰기는 공식 문서와 모의 HTTP로만 검증했다. 체크리스트는 실계정·타 OS·장기 수용 조건 때문에 유지한다(38/84). 독립 리뷰를 두 건(성장 운영, macOS 격리) 받았고 지적 사항을 수정했다. [검증](../../../docs/verification.md#2026-09-24-ai-성장-운영-구현). 남은 필수 입력: 시험 계정·외부 반영 승인 범위, Windows 장비, Apple 서명 인증서, 업데이트 게시 인증서.
 
@@ -8,16 +8,21 @@ Last Updated: 2026-09-24
 
 2026-09-23 후속 완료: 운영준비 탭/도구 상태·파일 선택, 공급자 아이콘 버튼, OAuth 앱 재사용/JSON 입력과 Play·AdMob 계정 자동 확인, 하위 프로젝트 탐색 및 Godot 정상 템플릿 경고 제거, Godot 4.7.2 카탈로그, 실제 Android ZIP 해제 결함 수정. 전체 493 통과/15 환경 skip/실패 0, 타입·빌드·Electron 화면·공식 도구 다운로드 검증. Android SDK 구성 요소 전체 설치·다른 OS 검증은 완료로 간주하지 않는다. Google 공통 등록과 실제 조회 후속 결과는 위 최신 기록을 따른다. [근거](../../../docs/verification.md#2026-09-23-운영준비프로젝트-탐색oauth-ux). 장기 수용 체크리스트와 유효 plan은 유지한다.
 
+2026-10-26 후속 완료: 스토어 배포에 Google Play 출시 도우미를 추가했다. Console의 수동 확인값을 보관하고 시작일 기반 일수 추정이나 스토어 리소스의 공개 상태와 혼합하지 않는다. 프로젝트별 체크 10개, 신청 답변 8개, 액세스/정식 심사와 공개 상태, 다음 할 일·공식 링크를 제공한다. 새 문서를 만들지 않고 기존 스토어 안내·검증 기록을 갱신했다. [검증](../../../docs/verification.md#2026-10-26-google-play-출시-도우미). 전체 717 통과/17 환경 skip/실패 0, 타입·빌드·실제 Electron·자체 리뷰 완료. 현재 요청은 완료이며 기존 실계정·타 OS·장기 수용 조건은 유지한다.
+
+2026-10-26 iOS·Steam 확장 완료: 기존 스토어 배포 화면에 Google Play / iOS·App Store / Steam 탭을 연결했다. 플랫폼별 체크리스트·테스트/심사/공개 기록·메모·서버 저장과 기존 Play 기록 보존을 구현했다. root가 구현·통합·실기 검증을 담당했고, 사용자 `$ai-team` 요청에 따라 `gpt-6-sol` / `high` 별도 세션에서 읽기 전용 독립 리뷰를 받았다. 리뷰에서 지적한 Steam Coming Soon 시작과 빌드 심사 병행 순서를 수정했고 행동 검사와 실제 화면으로 확인했다. 전체 739개 중 722 통과·실패 0·환경 skip 17, 리뷰 수정 후 관련 27/27 및 타입·빌드 통과. 실제 macOS Electron에서 플랫폼/프로젝트별 저장·재로드·실패 복구·키보드·1360px/1000px 배치를 확인했다. [검증](../../../docs/verification.md#2026-10-26-iossteam-출시-도우미-확장). 실계정 제출·공개는 수행하지 않았으며 현재 확장 요청은 완료다.
+
 ## Current Execution Contract
 
 - 유효 plan: [v11 — AI 설정·GitHub 개발 작업·웹 배포](app-operations-platform-plan-v11.md). v1–v9 이력과 기존 장기 수용 범위를 승계한다.
-- Active Phase: Phase 22 — 통합 검증·패키징·사용 안내. 구현 완료, 실계정·Linux 수용 별도.
-- Active Task: T-17.1·T-21.2·T-22.1–2의 실계정 OAuth·외부 반영·Linux 수용.
+- Active Phase: iOS·Steam 출시 도우미 후속 구현·검증·독립 리뷰 완료. 기존 Phase 22 실계정·Linux 수용은 별도 유지.
+- Active Task: 이번 T-5.2·T-5.3 출시 도우미 확장 완료. 기존 T-17.1·T-21.2·T-22.1–2 실계정·OS 수용은 유지.
 - 완료 조건: 설정→Git/GitHub→가져오기/문서→tmux 구현/리뷰/검증→승인/자동 반영→웹 배포를 구현하고 행동 테스트·실제 Electron·패키지·독립 리뷰로 검증한다. 실계정 외부 쓰기와 Linux 실기는 별도 수용 조건이다.
 - 금지 사항: 구현은 사용자 승인 범위다. 사용자 실계정 push·배포를 테스트 명목으로 수행하지 않는다. 비밀 출력, 기존 plan 덮어쓰기, 기존 변경 삭제를 하지 않는다. 제품의 자동화 체크 옵션은 현재 세션 외부 쓰기 승인이 아니다.
 
 ## 빠른 재개 안내
 
+- 출시 도우미는 세 플랫폼 모두 연결·검증됐다. 화면 배치에 관한 대기 질문은 없다. 사용법은 `docs/store-integration.md`, 최신 검증은 `docs/verification.md`의 2026-10-26 확장 항목과 `tmp/store-release-guide/`를 따른다. 현재 작업을 다시 시작하거나 기존 실계정 수용을 완료로 바꾸지 않는다.
 - 먼저 `git status --short`로 변경을 확인한다. 계획 작성 전부터 `electron-builder.json` 삭제와 `.DS_Store` 미추적 상태가 있었으며 보존했다.
 - v11 구현과 독립 리뷰 수정을 완료했다. 실행법은 `docs/ai-operations.md`, 검사 증거는 `docs/verification.md`의 2026-09-24 CLI 항목과 `tmp/development-workflow/`를 확인한다. 실계정 쓰기는 수행하지 않았다.
 - 후속 수용에 필요한 입력: 시험 GitHub 저장소·Netlify/Vercel 프로젝트와 실제 외부 반영 승인 범위. CLI 공식 OAuth를 사용하므로 앱 자체 callback 서버/클라이언트 비밀 입력은 필요하지 않다. OpenCode 기존 기본 모델 ox-alpha는 목록에 없어 설정의 모델 선택이 필요하다.

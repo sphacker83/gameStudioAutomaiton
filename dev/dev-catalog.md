@@ -1,6 +1,6 @@
 # Dev Catalog
 
-Last Updated: 2026-10-01
+Last Updated: 2026-10-26
 
 ## 예정
 
@@ -16,7 +16,11 @@ Last Updated: 2026-10-01
 
 ### 앱 출시·마케팅·수익화·커뮤니티 통합 자동화 개발계획 `38/84 (45%)`
 
-[`app-operations-platform`](active/app-operations-platform/app-operations-platform-plan-v11.md) · 생성일 `2026-09-11` · 태스크 수정일 `2026-09-24`
+[`app-operations-platform`](active/app-operations-platform/app-operations-platform-plan-v11.md) · 생성일 `2026-09-11` · 태스크 수정일 `2026-10-26`
+
+2026-10-26 후속 완료: iOS·Steam 출시 도우미 탭·플랫폼별 기록·저장·다음 할 일을 연결했다. 전체 722 통과/17 환경 skip, 독립 리뷰 수정 후 관련 27/27·타입·빌드·실제 Electron 검증 완료. 실계정·타 OS·장기 수용의 기존 완수율은 유지한다. [검증](../docs/verification.md#2026-10-26-iossteam-출시-도우미-확장).
+
+2026-10-26: Google Play 출시 도우미(프로젝트별 체크리스트·테스트 요건·심사 기록·신청 초안) 구현과 검증 완료. 전체 717 통과/17 환경 skip, 타입·빌드·Electron 검증. 기존 장기 수용 완수율 유지. [검증](../docs/verification.md#2026-10-26-google-play-출시-도우미).
 
 2026-09-24 후속: 실계정 없이 가능한 잔여 코드 공백(스토어 상품·정산·프리뷰, X 미디어, 광고 소재·귀속, 성과 규칙, 장비 이전 차단, macOS Seatbelt 빌드 격리)을 구현했다. 체크리스트는 실계정·타 OS·장기 수용 때문에 유지한다.
 

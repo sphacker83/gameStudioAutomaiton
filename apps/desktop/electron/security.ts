@@ -46,6 +46,9 @@ const ROUTES: RouteRule[] = [
   { method: 'POST', pattern: '/projects/:id/inspect' },
   { method: 'POST', pattern: '/projects/:id/relink' },
   { method: 'PUT', pattern: '/projects/:id/policy' },
+  { method: 'PUT', pattern: '/projects/:id/google-play-release' },
+  { method: 'PUT', pattern: '/projects/:id/release-guide/app-store' },
+  { method: 'PUT', pattern: '/projects/:id/release-guide/steam' },
   // 프로젝트 빌드 보안: Android 서명 키 선택 + SSH 의존성 목록 저장.
   { method: 'PUT', pattern: '/projects/:id/build-security' },
   { method: 'POST', pattern: '/projects/:id/build' },

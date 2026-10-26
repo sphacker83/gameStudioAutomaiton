@@ -232,7 +232,8 @@ test('every API path the renderer client calls is allowed by the Electron bounda
   const { readFile } = await import('node:fs/promises');
   const source = await readFile(new URL('../apps/desktop/src/api.ts', import.meta.url), 'utf8');
   const calls = [...source.matchAll(/request(?:<[^()]*?>)?\(\s*'(GET|POST|PUT|DELETE)',\s*[`'"]([^`'"]+)[`'"]/g)]
-    .map(([, method, path]) => [method!, path!.replace(/\$\{provider\}/g, 'x').replace(/\$\{[^}]+\}/g, 'fixture-1')] as const);
+    .flatMap(([, method, path]) => (path!.includes('/release-guide/') ? ['app-store', 'steam'] : ['x'])
+      .map(provider => [method!, path!.replace(/\$\{provider\}/g, provider).replace(/\$\{[^}]+\}/g, 'fixture-1')] as const));
   assert.ok(calls.length > 20, 'client calls were found');
   const denied = calls.filter(([method, path]) => !isAllowedApiPath(method, path.split('?')[0]!));
   assert.deepEqual(denied, []);

@@ -112,7 +112,7 @@ const NAV: NavDef[] = [
     key: 'releases',
     label: '스토어 배포',
     icon: UploadCloud,
-    desc: '빌드 업로드와 스토어 등록·심사·공개 상태',
+    desc: 'Google Play·App Store·Steam 출시 준비·테스트·심사 기록과 스토어 업로드',
     count: (s) => s.resources.filter((r) => r.kind === 'release').length,
   },
   {

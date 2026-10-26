@@ -1,6 +1,6 @@
 # 앱 출시·마케팅·수익화 통합 자동화 작업 목록
 
-Last Updated: 2026-09-24
+Last Updated: 2026-10-26
 
 2026-09-24 구현: CLI AI 설정·GitHub 개발 작업·tmux·검증/승인 반영·웹 배포 화면과 런타임을 구현했다. 독립 리뷰 수정과 로컬/fixture·macOS 패키지 검증을 완료했다. 신규 OAuth 동의·실계정 push/PR/배포·Linux 이번 변경 실기는 미완료 수용 조건으로 유지한다. [사용법](../../../docs/ai-operations.md) · [검증](../../../docs/verification.md#2026-09-24-cli-ai-설정github-개발-작업웹-배포).
 
@@ -101,6 +101,8 @@ Phase 1의 문서 고정 뒤 사용자 지시로 구현을 진행 중이다. 체
 - [ ] T-4.2 Google Play 업데이트·등록 자료·트랙·상태 관리 구현
 - [ ] T-4.3 Google Play 신규 앱 준비·필수 Console 절차·공개 흐름 구현
 
+2026-10-26 T-4.3 보강: 프로젝트별 Google Play 출시 도우미(체크리스트·12명/14일 확인·액세스/정식 심사·신청 답변 초안·영속 저장)를 구현하고 자체 리뷰·실제 Electron·행동 검사 5/5·전체 717 통과/17 환경 skip·타입·빌드를 확인했다. [사용법](../../../docs/store-integration.md#google-play-출시-도우미) · [검증](../../../docs/verification.md#2026-10-26-google-play-출시-도우미). 실계정 신청/공개 수용은 수행하지 않았으므로 T-4.3 및 기존 완수율 38/84를 유지한다.
+
 ### T-4.1 참조 블록
 
 - 작업 전 필독: [개발계획](app-operations-platform-plan.md)의 5·7·9절, 실제 엔진·SDK 버전의 공식 CLI 문서.
@@ -123,13 +125,15 @@ Phase 1의 문서 고정 뒤 사용자 지시로 구현을 진행 중이다. 체
 - 원본 코드 참조: T-4.2 Play 배포, T-2.4 사용자 조치 대기·재개 계약.
 - 구현 대상: 신규 앱 등록 준비·기존 앱 매칭, 최초 업로드·설문·동의 상태, 검증된 경우의 브라우저 어댑터, 공개 절차.
 - 검증 참조: V-05·V-06. 신규/기존 앱 구분, 등록 정보 재사용, 필수 조치 완료 후 이어서 실행, 화면 변경 시 잘못된 쓰기 차단을 확인한다.
-- 문서 반영: `docs/integration-capabilities.md`에 자동/필수 조치 경계를, `docs/release-operations.md`에 최초 출시 절차를 기록한다.
+- 문서 반영: `docs/integration-capabilities.md`에 자동/필수 조치 경계를, 기존 `docs/store-integration.md`에 최초 출시 도우미 사용법을 기록한다.
 
 ## Phase 5 — Apple·Steam 배포 확장 [상태: 진행 중]
 
 - [ ] T-5.1 Mac 러너와 네이티브 iOS·Godot iOS 빌드·서명 구현
 - [ ] T-5.2 Apple 업로드·처리 상태·TestFlight·심사·출시 관리 구현
 - [ ] T-5.3 Steam용 빌드·SteamPipe·브랜치·공개 확인·자료 관리 구현
+
+2026-10-26 T-5.2·T-5.3 출시 도우미 확장 완료: iOS·Steam 탭에 플랫폼별 체크리스트·테스트/심사/공개 상태·메모 초안·저장·다음 할 일을 연결했다. 기존 Play 보존·프로젝트/플랫폼/모드 분리·재시작·입력/revision 검증을 포함해 전체 722 통과/17 환경 skip/실패 0. 독립 리뷰의 Steam Coming Soon/빌드 병행 안내를 수정한 뒤 관련 27/27·타입·빌드 및 실제 Electron 검증을 통과했다. [사용법](../../../docs/store-integration.md#iossteam-출시-도우미) · [검증](../../../docs/verification.md#2026-10-26-iossteam-출시-도우미-확장). 화면 배치 질문은 대기하지 않는다. 실계정 제출/공개·Apple 서명·다른 OS 수용은 수행하지 않았으므로 T-5.2·T-5.3의 전체 수용과 기존 완수율 38/84는 유지한다.
 
 ### T-5.1 참조 블록
 

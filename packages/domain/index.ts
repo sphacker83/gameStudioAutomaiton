@@ -1,3 +1,5 @@
+import type { GuidedStore, StoreReleaseRecord } from './store-release.js';
+import type { GooglePlayRelease } from './google-play-release.js';
 export type EngineKind = 'godot' | 'unity' | 'unreal' | 'android' | 'ios' | 'unknown';
 export type BuildTarget = 'android' | 'ios' | 'windows' | 'macos' | 'linux';
 export type Provider = 'google-play' | 'app-store' | 'steam' | 'google-ads' | 'applovin-ads' | 'applovin-max' | 'admob' | 'x' | 'threads';
@@ -30,7 +32,7 @@ export interface SocialSchedule {
   status: 'scheduled' | 'queued' | 'cancelled'; runIds: Record<string, string>; createdAt: string; updatedAt: string;
 }
 export interface StoreAppMapping { connectionId: string; appId: string; verifiedAt?: string }
-export interface Project extends ProjectInspection { id: string; createdAt: string; updatedAt: string; policy: AutomationPolicy; buildSecurity?: ProjectBuildSecurity; socialPolicy?: ProjectSocialPolicy; storeApps?: Partial<Record<'google-play'|'app-store'|'steam', StoreAppMapping>>; relinkRequired?: boolean }
+export interface Project extends ProjectInspection { storeReleaseGuides?: Partial<Record<GuidedStore, StoreReleaseRecord>>; googlePlayRelease?: GooglePlayRelease; id: string; createdAt: string; updatedAt: string; policy: AutomationPolicy; buildSecurity?: ProjectBuildSecurity; socialPolicy?: ProjectSocialPolicy; storeApps?: Partial<Record<'google-play'|'app-store'|'steam', StoreAppMapping>>; relinkRequired?: boolean }
 export interface Toolchain { name: string; executable: string | null; version: string | null; available: boolean; reason?: string }
 export interface CommandSpec { executable: string; args: string[]; cwd: string; env?: Record<string, string>; label: string }
 export interface BuildPlan {

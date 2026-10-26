@@ -1,6 +1,6 @@
 # Google Play · App Store · Steam 스토어 연동
 
-Last Updated: 2026-09-11 (공식 문서 조사 기준일 동일)
+Last Updated: 2026-10-26 (출시 도우미 정책 확인일; 기존 커넥터 조사일은 각 절에 명시)
 담당 모듈: `packages/connectors/google-play.ts`, `packages/connectors/app-store.ts`, `packages/connectors/steam.ts`, `packages/connectors/store-play-edits.ts`, `packages/connectors/store-apple-ops.ts`, `packages/connectors/store-steam-ops.ts`, `packages/connectors/store-jsonapi.ts`, `packages/connectors/store-tools.ts`
 계약 원본: [구현 계약](implementation-contract.md) — `Connector { capability, execute }`, 전송·멱등성·정책 검사는 controller/transport가 소유한다.
 
@@ -10,6 +10,38 @@ Last Updated: 2026-09-11 (공식 문서 조사 기준일 동일)
 - 외부 쓰기는 `write: true`로 표시되어 transport가 dispatch를 기록하고, CLI 외부 효과는 spawn 전에 `context.markDispatched()`를 직접 호출한다. 단계별 외부 ID는 `context.checkpoint`로 남긴다.
 - 지원하지 않는 작업·형식은 명시적인 `UNSUPPORTED_OPERATION`/`MISSING_REQUIREMENT` 오류로 반환하며 가짜 성공을 만들지 않는다. `capability.operations`에는 실제 구현된 작업만 나열한다.
 - 오류·progress·summary에는 비밀(키·토큰·세션)을 넣지 않는다. Steam CLI 로그는 `redact`로 정리 후 노출한다.
+
+## Google Play 출시 도우미
+
+`스토어 배포 → 프로젝트 선택 → Google Play 탭`에서 출시 준비를 관리한다. 계정 연결 전에도 프로젝트별 기록을 저장할 수 있다.
+
+1. 계정의 테스트 의무 적용 여부를 선택하고 출시 체크리스트를 확인한다. 광고·결제 미사용도 확인 후 체크한다.
+2. Play Console에서 확인한 연속 참여 인원·일수·확인일을 입력한다. 대상 계정은 12명·14일 이상을 기록한 뒤 Console의 액세스 신청 가능 여부를 별도로 확인한다. 초대 인원과 참여 등록 인원은 다르며, 기록한 일수는 자동으로 늘어나지 않는다.
+3. 신청 답변 준비를 펼쳐 모집·참여·피드백·대상 사용자·차별점·예상 설치·수정·출시 준비 근거를 작성한다. 미리보기와 복사를 지원하며 빈 답변은 `[작성 필요]`로 남는다.
+4. `출시 기록 저장`으로 보관한다. 편집 중에는 프로젝트·플랫폼 선택을 잠그며 `저장된 기록으로 되돌리기`로 취소할 수 있다. 화면을 떠나기 전에 저장한다.
+5. 액세스 심사와 정식 출시 심사 상태를 각각 기록한다. 정식 출시 승인과 실제 공개도 구분한다. 심사 메모에는 요청 사유·신청일·버전·출시 국가·공개일을 기록할 수 있다.
+
+진행률은 직접 확인하는 7개 항목과 테스트 요건/비대상 확인·액세스 사용 가능·실제 공개의 3개 항목으로 계산한다. 마지막 세 항목은 관련 입력에서 반영한다. 기록은 로컬 프로젝트의 `googlePlayRelease`에 저장되고 앱 재시작과 데모/실제 모드 분리를 유지한다. 같은 기록을 다른 창에서 먼저 수정하면 오래된 저장을 거부한다.
+
+정책 기준 확인일은 2026-10-26이다. 2023-11-13 이후 생성된 개인 개발자 계정은 최소 12명이 연속 14일 참여 등록을 유지해야 신청할 수 있다. 해당 계정의 공개 테스트는 프로덕션 액세스 승인 뒤 가능하다. 실제 참여도·피드백이 부족하면 추가 테스트를 요구할 수 있으며 액세스 심사는 통상 7일 이내지만 더 걸릴 수 있다. [Google 공식 테스트·출시 요건](https://support.google.com/googleplay/android-developer/answer/14151465)
+
+내부 테스트는 최대 100명이며, 내부 테스트 참여자가 비공개 테스트로 옮기려면 내부 테스트에서 먼저 나와야 한다. [테스트 트랙 설정](https://support.google.com/googleplay/android-developer/answer/9845334)
+
+인원·일수·심사 결과는 사용자가 Console에서 확인해 입력한다. 저장·초안 복사는 Google에 신청을 전송하거나 앱을 공개하지 않는다. 실제 제출은 Play Console에서 진행하며 기존 스토어 업로드 기능은 별도로 사용한다. 대상 API 숫자는 고정하지 않고 화면의 공식 최신 기준 링크로 안내한다.
+
+## iOS·Steam 출시 도우미
+
+같은 화면에서 `iOS · App Store` 또는 `Steam` 탭을 선택한다. 플랫폼마다 출시 순서·10개 준비 항목·다음 할 일·심사/공개 기록·날짜·메모 초안과 공식 링크를 제공한다. 프로젝트가 없어도 출시 순서를 볼 수 있다.
+
+- **iOS:** TestFlight와 정식 App Review를 구분한다. `Ready for Review`는 아직 제출 전이며, 정식 심사 승인과 실제 공개도 각각 기록한다. 수동·자동·지정 시각 이후 공개 방식에 맞춰 다음 작업을 안내한다. 메모에는 기기 테스트, 반려·수정 내역, 심사 안내, 출시 확인 결과를 남긴다.
+- **Steam:** 스토어 페이지 심사와 빌드 심사, Coming Soon 최소 2주, 적용되는 등록비 결제 후 30일 대기를 각각 확인한다. 스토어 승인 후 Coming Soon을 공개하고 빌드 준비·심사를 병행하도록 안내한다. 두 심사와 기간 조건을 확인해야 실제 공개 완료를 기록할 수 있다. 날짜 입력만으로 대기 조건을 자동 완료하지 않는다.
+- **저장:** `출시 기록 저장`은 로컬 프로젝트의 `storeReleaseGuides`에 플랫폼별로 보관한다. 다른 플랫폼과 기존 Google Play 기록을 유지하며 프로젝트·실제/데모 모드를 분리한다. 편집 중 플랫폼·프로젝트 전환을 막고 새로고침에도 입력을 유지한다. 오래된 revision과 잘못된 날짜·상태는 오류로 표시한다.
+
+정책 기준은 2026-10-26 공식 안내로 확인했다. TestFlight는 내부 최대 100명·외부 최대 10,000명, 빌드 테스트 가능 기간 최대 90일이며 외부 테스트 첫 빌드는 별도 심사를 받는다. [Apple TestFlight](https://developer.apple.com/help/app-store-connect/test-a-beta-version/testflight-overview/) · [심사 제출](https://developer.apple.com/help/app-store-connect/manage-submissions-to-app-review/submit-an-app/) · [공개 방식](https://developer.apple.com/help/app-store-connect/manage-your-apps-availability/select-an-app-store-version-release-option/)
+
+Steam 신규 제품은 Coming Soon 공개 기간을 충족해야 하고, 등록비 대기 조건의 적용 여부는 Steamworks에서 확인한다. 심사 승인만으로 자동 출시되지 않으며 Release App 절차가 필요하다. [Steam 출시 절차](https://partner.steamgames.com/doc/store/releasing) · [Coming Soon](https://partner.steamgames.com/doc/store/coming_soon) · [등록비 대기](https://partner.steamgames.com/steamdirect/)
+
+이 기록은 사용자가 공식 콘솔에서 확인해 입력한다. 저장·복사는 심사 제출이나 공개를 실행하지 않으며 기존 업로드·스토어 작업과 별도로 사용한다.
 
 ## Google Play (`googlePlayConnector`)
 

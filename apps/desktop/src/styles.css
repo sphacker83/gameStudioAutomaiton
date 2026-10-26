@@ -1170,3 +1170,31 @@ button {
 .provider-choice__icon--google-ads, .provider-choice__icon--app-store { color: #64a9ff; }
 .provider-choice__icon--applovin-max, .provider-choice__icon--applovin-ads { color: #d29af8; }
 .tool-picker { display: flex; flex-wrap: wrap; gap: 7px; }
+
+/* Google Play 출시 준비: 프로젝트 기록과 공식 요건을 함께 보여준다. */
+.play-release-summary { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+.play-release-count { font-size: 32px; color: var(--teal-600); font-variant-numeric: tabular-nums; }
+.play-release-count span { font-size: 16px; color: var(--text-muted); font-weight: 400; }
+.play-release-next { flex: 1; min-width: 230px; }
+.play-release-next p { margin: 4px 0 0; }
+.play-release-progress { width: 100%; height: 8px; accent-color: var(--teal-600); }
+.play-release-fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.play-release-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.play-release-section { padding: 18px; border: 1px solid var(--border); border-radius: var(--radius-sm); min-width: 0; }
+.play-release-section h3 { font-size: 14px; margin: 0 0 12px; }
+.play-release-checks { display: grid; gap: 12px; margin-bottom: 16px; }
+.play-release-checks label, .play-release-check { display: flex; align-items: flex-start; gap: 9px; font-size: 13px; }
+.play-release-checks input, .play-release-check input { margin-top: 3px; accent-color: var(--teal-600); flex: none; }
+.play-release-checks small { display: block; color: var(--text-muted); font-size: 11px; margin-top: 2px; }
+.play-guide-details { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 16px; }
+.play-guide-details summary { cursor: pointer; font-weight: 600; }
+.play-guide-details[open] summary { margin-bottom: 16px; }
+.play-release-steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px 30px; padding-left: 22px; }
+.play-release-steps li { padding-left: 3px; font-size: 13px; }
+.play-release-steps li::marker { color: var(--teal-600); font-weight: 700; }
+.play-release-steps span { display: block; color: var(--text-muted); font-size: 12px; margin-top: 4px; }
+@media (max-width: 1200px) { .play-release-section .play-release-columns { grid-template-columns: 1fr; } }
+@media (max-width: 900px) {
+  .play-release-columns { grid-template-columns: 1fr; }
+  .play-release-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
